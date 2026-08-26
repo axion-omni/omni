@@ -1,0 +1,28 @@
+{
+  "overall_progress_pct": 3,
+  "current_milestone": "M1 - system can communicate with models",
+  "current_stage": "Stage 1 - Basic AI interface",
+  "current_brick": "Session 2",
+  "completed_bricks": [
+    {
+      "id": "S1",
+      "title": "Model abstraction + Anthropic provider",
+      "files": [
+        "core/models/base.py",
+        "core/models/exceptions.py",
+        "core/models/providers/anthropic_provider.py",
+        "core/config.py",
+        "tests/test_anthropic_provider.py",
+        "scripts/smoke_test.py"
+      ],
+      "tests_passing": 4,
+      "commit": "PENDING_FIRST_COMMIT"
+    }
+  ],
+  "next_brick": "S2",
+  "blocked_bricks": [],
+  "open_questions": [],
+  "open_risks": [],
+  "decisions_required": [],
+  "failed_experiments": []
+}
