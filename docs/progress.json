@@ -16,7 +16,7 @@
         "scripts/smoke_test.py"
       ],
       "tests_passing": 4,
-      "commit": "PENDING_FIRST_COMMIT"
+      "commit": "c9925a1"
     }
   ],
   "next_brick": "S2",
