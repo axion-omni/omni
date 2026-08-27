@@ -3,6 +3,8 @@
   "current_milestone": "M1 - system can communicate with models",
   "current_stage": "Stage 1 - Basic AI interface",
   "current_brick": "Session 2",
+  "build_protocol_adopted": true,
+  "verification_level_current_brick": 2,
   "completed_bricks": [
     {
       "id": "S1",
@@ -16,7 +18,8 @@
         "scripts/smoke_test.py"
       ],
       "tests_passing": 4,
-      "commit": "c9925a1"
+      "commit": "5def786",
+      "verification_level": 2
     }
   ],
   "next_brick": "S2",
