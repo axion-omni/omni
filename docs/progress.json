@@ -33,7 +33,7 @@
         "scripts/smoke_test_openrouter.py"
       ],
       "tests_passing": 10,
-      "commit": "PENDING",
+      "commit": "3224fbf",
       "verification_level": 2
     }
   ],
