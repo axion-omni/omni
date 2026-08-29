@@ -122,7 +122,7 @@
       "tests_passing": 7,
       "total_tests_after": 53,
       "tests_skipped": 1,
-      "commit": null,
+      "commit": "bdf9100",
       "verification_level": 2
     }
   ],
