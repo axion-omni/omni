@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from core.config import Settings
 from core.models.base import ModelResponse
-from core.models.exceptions import ModelNotRegisteredError, ModelRateLimitError
+from core.models.exceptions import ModelInvalidRequestError, ModelNotRegisteredError
 
 from apps.cli.main import run
 
@@ -49,6 +49,7 @@ def _fake_settings():
         active_provider="anthropic",
         openrouter_api_key="fake",
         openrouter_model="meta-llama/llama-3.3-70b-instruct:free",
+        model_fallback="",
     )
 
 
@@ -119,7 +120,9 @@ def test_run_with_no_prompt_prints_usage(capsys):
 
 
 def test_run_handles_model_error_cleanly(capsys):
-    provider = _FakeProvider(error=ModelRateLimitError("slow down"))
+    # Use a non-retryable error so the CLI fails fast (no real backoff sleep)
+    # while still exercising the clean one-line error path.
+    provider = _FakeProvider(error=ModelInvalidRequestError("bad request"))
     registry = _FakeRegistry(provider)
 
     exit_code = run(
@@ -130,8 +133,8 @@ def test_run_handles_model_error_cleanly(capsys):
 
     captured = capsys.readouterr()
     assert exit_code == 1
-    assert "ModelRateLimitError" in captured.err
-    assert "slow down" in captured.err
+    assert "ModelInvalidRequestError" in captured.err
+    assert "bad request" in captured.err
     # no raw traceback leaked to the user
     assert "Traceback" not in captured.err
 

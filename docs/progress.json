@@ -1,8 +1,8 @@
 {
-  "overall_progress_pct": 14,
-  "current_milestone": "M1 - system can communicate with models",
-  "current_stage": "Stage 2 - Model abstraction & routing",
-  "current_brick": "Session 5 (next)",
+  "overall_progress_pct": 18,
+  "current_milestone": "M1 - system can communicate with models (code-complete, L2)",
+  "current_stage": "Stage 2 complete -> Stage 3 (persistent project state) next",
+  "current_brick": "Session 6 (next)",
   "build_protocol_adopted": true,
   "verification_level_current_brick": 2,
   "completed_bricks": [
@@ -89,17 +89,35 @@
       "total_tests_after": 39,
       "commit": "8adf4f9",
       "verification_level": 2
+    },
+    {
+      "id": "S5",
+      "title": "Retry + fallback (backoff on retryable errors; one fallback model)",
+      "files": [
+        "core/models/retry.py",
+        "core/config.py (extended: model_fallback / MODEL_FALLBACK)",
+        "apps/cli/main.py (generate routed through generate_with_retry)",
+        ".env.example (MODEL_FALLBACK)",
+        "tests/test_retry.py",
+        "tests/test_cli.py, tests/test_factory.py, tests/test_registry.py (Settings field)"
+      ],
+      "tests_passing": 7,
+      "total_tests_after": 46,
+      "commit": null,
+      "verification_level": 2
     }
   ],
-  "next_brick": "S5",
+  "next_brick": "S6",
   "blocked_bricks": [],
   "open_questions": [],
   "open_risks": [
     "OpenRouter free-tier model slugs rotate; default may need updating via OPENROUTER_MODEL env var over time",
-    "Routing (S4) selects logical names but every name resolves to one concrete model per provider (D007); physical per-tier model differentiation needs a second registered model"
+    "Routing (S4) selects logical names but every name resolves to one concrete model per provider (D007); physical per-tier model differentiation needs a second registered model",
+    "Retry (S5) is complete but a live fallback (MODEL_FALLBACK) only changes the outcome once it resolves to a different provider/model than the primary (D008)"
   ],
   "decisions_required": [],
   "failed_experiments": [],
+  "milestone_1_status": "code-complete at Level 2 (Sessions 1-5); pending operator Level-3",
   "destination_doc": "PERSONAL_AI_OS_MASTER_ARCHITECTURE.md (see D006)",
-  "handoff_note": "Sessions 3 (registry) and 4 (routing) built and Level-2 verified (39 tests pass, no network). Post-S3 review fix committed (6c14d4b: duplicate --model handling). Operator Level-3 pending for Sessions 2-4: run `pytest -v` and, with a real key, the same prompt under MODEL_POLICY=cheap vs =quality to see the routing selection change. Next brick: Session 5 (retry + fallback), which completes construction-spec Milestone 1. Phase-by-phase route and test gates are in docs/BUILD_PLAN.md."
+  "handoff_note": "Milestone 1 (Stages 0-2, 'can communicate with models') is code-complete at Level 2: model abstraction, registry (S3), routing (S4), retry+fallback (S5). 46 tests pass, no network. Operator Level-3 pending for Sessions 2-5: run `pytest -v` and, with a real key, the same prompt under MODEL_POLICY=cheap vs =quality to see the routing selection change. Next brick: Session 6 = Stage 3 Persistent Project State; per D006 build on Postgres (Milestone C), skipping the spec's interim SQLite step. Break Session 6 out in full detail before coding. Phase route + test gates in docs/BUILD_PLAN.md."
 }

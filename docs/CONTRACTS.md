@@ -93,6 +93,7 @@ class Settings:
     active_provider: str     # "anthropic" | "openrouter"
     openrouter_api_key: str
     openrouter_model: str
+    model_fallback: str      # logical name tried once if primary exhausts retries; "" = none
 ```
 
 Sourced only from environment variables (`.env` locally). No component
@@ -187,6 +188,33 @@ def route(task_type: str, policy: str) -> str: ...   # -> a logical model name
   routing changes the logical selection + log line but not yet the concrete
   model; physical differentiation lands when a second model is registered.
 
+## retry + fallback (core/models/retry.py) — Session 5
+
+```python
+RETRYABLE_ERRORS = (ModelRateLimitError, ModelTimeoutError, ModelUnavailableError)
+
+def call_with_retry(fn, *, max_attempts=3, base_delay=1.0, sleep=time.sleep) -> T: ...
+
+def generate_with_retry(
+    registry, prompt, *, primary, fallback=None,
+    max_attempts=3, base_delay=1.0, sleep=time.sleep, **generate_kwargs,
+) -> ModelResponse: ...
+```
+
+**Agreements:**
+- Only `RETRYABLE_ERRORS` are retried (exponential backoff `base_delay*2**n`:
+  1s, 2s, 4s…). `ModelAuthError`, `ModelInvalidRequestError`, and
+  `ModelNotRegisteredError` **fail fast** — no retry.
+- Exhausting `max_attempts` re-raises the **original** exception, never a
+  wrapped one. `max_attempts` counts the first try (3 ⇒ at most 2 retries).
+- `generate_with_retry` resolves `primary` via the registry and generates under
+  retry; only if that exhausts retries on a **retryable** error does it try
+  `fallback` **once**. A non-retryable failure never triggers the fallback.
+  `fallback=None` or `fallback == primary` ⇒ no fallback.
+- `sleep` is injectable so tests exercise backoff with no real delay.
+- Per D008: the fallback only changes the outcome once it resolves to a
+  different provider/model than the primary (needs a second registered model).
+
 ## `OpenRouterProvider` (core/models/providers/openrouter_provider.py)
 
 Implements `ModelProvider` exactly like `AnthropicProvider` does. Talks to
@@ -197,7 +225,6 @@ OpenRouter rotate over time.
 
 ## Not yet defined (will be added here when built)
 
-- Retry + fallback wrapper (`core.models.retry`) — Session 5
 - Tool interface (`core.tools.Tool`) — Session ~9+
 - Agent contract (task/output shape every agent returns) — Session ~11+
 - Task graph node schema — Session ~13+

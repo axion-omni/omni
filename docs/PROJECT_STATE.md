@@ -3,9 +3,9 @@
 Machine-readable state: `docs/progress.json` (kept in sync with this file).
 
 ## Overall
-- **Current milestone:** Milestone 1 — "can communicate with models" — Sessions 3–4 of 5 built (Level 2)
-- **Current stage:** Stage 2 — Model abstraction & routing (registry + routing done; retry/fallback next)
-- **Current brick:** Session 4 (routing table + MODEL_POLICY) built, Level 2 → Session 5 (retry + fallback) next
+- **Current milestone:** Milestone 1 — "can communicate with models" — all 5 sessions built (Level 2); construction-spec M1 code-complete
+- **Current stage:** Stage 2 complete (model abstraction, registry, routing, retry/fallback) → Stage 3 (persistent project state) next
+- **Current brick:** Session 5 (retry + fallback) built, Level 2 → Session 6 (Stage 3, project state) next
 - **Build protocol:** non-negotiable build protocol in effect.
 
 ## Completed
@@ -18,37 +18,41 @@ Machine-readable state: `docs/progress.json` (kept in sync with this file).
   `ModelNotRegisteredError`; CLI gained `--model <logical-name>`; factory
   reused as the registry's construction primitive (D007). Level 2.
 - CLI hardening (post-S3 review, commit `6c14d4b`): duplicate/leftover
-  `--model` now takes the usage path instead of being sent as the prompt;
-  2 regression tests.
+  `--model` now takes the usage path instead of being sent as the prompt.
 - Session 4 — Routing (`core/models/routing.py`): `route(task_type,
-  MODEL_POLICY) -> logical name`, small rule table (`general` fallback row +
-  `code`), logged decision; CLI now routes by `MODEL_POLICY` when `--model`
-  is omitted and prints the selection in its stderr tag. Level 2.
-- 39 unit tests total, all passing (level 2 — assistant sandbox)
-- CLI → routing → registry → factory → provider chain confirmed wired
-  end-to-end with injected fakes, plus a real (non-injected) run showing the
-  routing decision change with MODEL_POLICY (cheap→cheap-fast,
-  quality→reasoning-strong) — still not run with a real key by the operator.
+  MODEL_POLICY) -> logical name`, small rule table, logged decision; CLI
+  routes by `MODEL_POLICY` when `--model` omitted, prints selection. Level 2.
+- Session 5 — Retry + fallback (`core/models/retry.py`): `call_with_retry`
+  (capped exponential backoff, retryable errors only) + `generate_with_retry`
+  (registry-resolved primary, one fallback logical model on retry-exhaustion);
+  `Settings.model_fallback` (env `MODEL_FALLBACK`); CLI generate now goes
+  through it (D008). Level 2.
+- 46 unit tests total, all passing (level 2 — assistant sandbox)
+- Full chain CLI → routing → registry → factory → provider → retry confirmed
+  wired with injected fakes; real (non-injected) runs show the routing
+  decision changing with MODEL_POLICY and a clean fast-fail with no key —
+  still not run with a real key by the operator.
 
 ## In progress
-- Verification level 3 pending for Sessions 2, 3, and 4 — operator has not
-  yet run the CLI with a real key.
+- Verification level 3 pending for Sessions 2–5 — operator has not yet run
+  the CLI with a real key.
 
 ## Blocked
 - None.
 
 ## Decisions pending
-- None new since D007. (Session 4 introduced no new decision; the
-  one-model-per-provider consequence is already covered by D007.)
+- None new since D008.
 
 ## Next
-- Operator: run `pytest -v` (expect 39 passed) and, with a real key in `.env`,
+- Operator: run `pytest -v` (expect 46 passed) and, with a real key in `.env`,
   `MODEL_POLICY=cheap python apps/cli/main.py "say hello"` then
-  `MODEL_POLICY=quality python apps/cli/main.py "say hello"` — confirm the
-  printed selection / routing log line changes (Session 4 L3), which also
-  covers Sessions 2–3's pending L3.
-- Then: Session 5 — Retry + fallback (`core/models/retry.py`): backoff for
-  retryable errors only, one configured fallback — completes Milestone 1.
+  `MODEL_POLICY=quality ...` — confirm the printed selection / routing log line
+  changes (Sessions 2–5 L3 in one go). This closes construction-spec
+  Milestone 1 at Level 3.
+- Then: Session 6 — Stage 3, Persistent Project State (Project Constitution).
+  Per D006 the destination requires Postgres (Milestone C), skipping the
+  spec's interim SQLite step — see BUILD_PLAN.md. Break out Session 6 in full
+  session detail before starting (Construction Spec Part VII note).
 
 ## Last verified
-Level 3 confirmed for Sessions 1 and 1b. Sessions 2, 3, 4: level 2 only so far.
+Level 3 confirmed for Sessions 1 and 1b. Sessions 2, 3, 4, 5: level 2 only so far.

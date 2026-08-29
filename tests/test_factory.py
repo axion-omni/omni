@@ -21,6 +21,7 @@ def _settings(active_provider: str) -> Settings:
         active_provider=active_provider,
         openrouter_api_key="fake-openrouter-key",
         openrouter_model="meta-llama/llama-3.3-70b-instruct:free",
+        model_fallback="",
     )
 
 

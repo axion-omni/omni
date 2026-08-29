@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from core.config import load_settings
 from core.models.exceptions import ModelError
 from core.models.registry import build_default_registry
+from core.models.retry import generate_with_retry
 from core.models.routing import DEFAULT_TASK_TYPE, route
 
 USAGE = 'Usage: python apps/cli/main.py "<prompt>" [--model <logical-name>]'
@@ -86,8 +87,12 @@ def run(
 
     try:
         registry = registry_builder(settings)
-        provider, model_id = registry.resolve(logical_model)
-        result = provider.generate(prompt, model=model_id)
+        result = generate_with_retry(
+            registry,
+            prompt,
+            primary=logical_model,
+            fallback=settings.model_fallback or None,
+        )
     except ModelError as exc:
         print(f"Error ({type(exc).__name__}): {exc}", file=sys.stderr)
         return 1

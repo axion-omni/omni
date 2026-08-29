@@ -29,6 +29,9 @@ core/
     ├── routing.py                     Policy routing (Session 4). route(
     │                                   task_type, MODEL_POLICY) -> logical name
     │                                   the registry resolves; logs the decision.
+    ├── retry.py                       Retry + fallback (Session 5). Backoff on
+    │                                   retryable errors only; one fallback
+    │                                   logical model. sleep injectable.
     └── providers/
         ├── anthropic_provider.py      Only file that imports the `anthropic`
         │                               SDK. Implements ModelProvider.
@@ -54,23 +57,27 @@ python apps/cli/main.py "<prompt>" [--model <logical-name>]
         → logical name   [logs the routing decision]
     → core.models.registry.build_default_registry(settings) → ModelRegistry
         (internally: core.models.factory.get_active_provider(settings))
-    → registry.resolve(logical_name) → (ModelProvider, model_id)
-    → provider.generate(prompt, model=model_id) → ModelResponse
+    → core.models.retry.generate_with_retry(registry, prompt,
+        primary=logical_name, fallback=settings.model_fallback or None)
+        → registry.resolve(logical_name) → (ModelProvider, model_id)
+        → provider.generate(prompt, model=model_id) under capped backoff;
+          retryable errors retried, one fallback model tried if primary exhausts
+        → ModelResponse
     → printed to stdout (text) / stderr (usage + selection + errors)
 ```
 
-There is no retry/fallback yet (Session 5), no memory layer, no tools, and no
-agents yet — those are Sessions 5+ (see ROADMAP.md and BUILD_PLAN.md). Routing
+There is no memory layer, no tools, and no agents yet — those are Sessions 6+
+(see ROADMAP.md and BUILD_PLAN.md). Model routing is now complete: routing
 (Session 4) maps a (task_type, MODEL_POLICY) pair to a logical name and logs
 the decision; the registry resolves that name to a concrete (provider,
-model_id) and exposes provider-sourced capabilities + a per-call
-`estimated_cost()` helper. Today every logical name resolves to the active
-provider's single default model (D007), so flipping `MODEL_POLICY` changes the
-logical selection and the logged decision for an identical prompt; mapping the
-tiers to physically distinct models lands once a second model is registered.
-`core/models/factory.py` remains the single place that selects a provider from
-`ACTIVE_PROVIDER`; the registry sits on top of it (D007). Nothing in this repo
-should be assumed to exist beyond what's listed above without checking.
+model_id); retry (Session 5) wraps the call with capped exponential backoff for
+retryable errors only and one configured fallback. Today every logical name
+resolves to the active provider's single default model (D007), so flipping
+`MODEL_POLICY` changes the logical selection + logged decision for an identical
+prompt, and the fallback becomes meaningful once a second model is registered
+(D008). `core/models/factory.py` remains the single place that selects a
+provider from `ACTIVE_PROVIDER`. Nothing in this repo should be assumed to exist
+beyond what's listed above without checking.
 
 ## Rule enforced by this structure
 
@@ -79,6 +86,6 @@ This is what lets a second provider be added later as a new file + a
 registry entry (once the registry exists), not a rewrite of callers.
 
 ## Last verified against actual code
-Commit `6c14d4b` + Session 4 (routing). `pytest -v` → 39 passed in the
+Commit `3e3b63e` + Session 5 (retry + fallback). `pytest -v` → 46 passed in the
 assistant sandbox (Level 2). If this file and the actual `core/` tree
 disagree, the code wins — flag it, don't silently trust this doc.

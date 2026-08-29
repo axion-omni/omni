@@ -30,6 +30,10 @@ class Settings:
     openrouter_api_key: str
     openrouter_model: str
 
+    # --- Session 5: optional fallback logical model tried once if the primary
+    # exhausts its retries on a retryable error. Empty means "no fallback".
+    model_fallback: str
+
 
 def load_settings() -> Settings:
     return Settings(
@@ -40,4 +44,5 @@ def load_settings() -> Settings:
         openrouter_model=os.environ.get(
             "OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free"
         ),
+        model_fallback=os.environ.get("MODEL_FALLBACK", ""),
     )

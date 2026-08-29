@@ -124,17 +124,23 @@ Level-3 for Session 2 is the one open item and is also the Session-3 gate-in.
   then `=quality` and see the printed selection / log line change. *(Spec: Part
   VII, Session 4. Note per D007: both resolve to one concrete model until a
   second is registered — the routing selection is what changes.)*
-- `[ ]` **Session 5 — Retry + fallback.**  **NEXT**
-  Builds: `core/models/retry.py` — capped exponential backoff for retryable
-  errors only (`RateLimit`/`Timeout`/`Unavailable`), one fallback model.
-  **Test gate (L2):** `pytest tests/test_retry.py` — fails-twice-then-succeeds
-  still returns; always-fails triggers the fallback; a non-retryable error
-  (`Auth`/`InvalidRequest`) fails fast with no retry. **L3:** operator
-  confirms a transient failure survives. *(Spec: Part VII, Session 5.)*
+- `[~]` **Session 5 — Retry + fallback.**  *Built — Level 2*
+  Built: `core/models/retry.py` — `call_with_retry` (capped exponential backoff
+  for retryable errors only) + `generate_with_retry` (registry-resolved
+  primary, one configured fallback logical model on retry-exhaustion);
+  `Settings.model_fallback` (env `MODEL_FALLBACK`); CLI generate routed through
+  it.
+  **Test gate (L2): ✅ `pytest -v` → 46 passed** — fails-twice-then-succeeds
+  returns; always-fails (retryable) triggers the fallback once; a non-retryable
+  error fails fast with no retry and no fallback; backoff is 1s/2s (injected
+  `sleep`, no real waiting). **L3 (pending operator):** exercised by any real
+  CLI run; fallback is observable once `MODEL_FALLBACK` resolves to a different
+  model (D008). *(Spec: Part VII, Session 5.)*
 
 **Milestone B gate (destination Section 15):** registry resolves logical
-names; the policy switch provably changes the model; retry survives a
-transient failure. This also closes construction-spec **Milestone 1**.
+names; the policy switch provably changes the model; retry survives a transient
+failure. **Code-complete at Level 2** — closes construction-spec **Milestone 1**
+pending the operator's Level-3 run.
 
 ---
 
@@ -288,9 +294,12 @@ interfaces (web dashboard, native app, full voice).
 
 ## Where we are right now
 
-- **Done & Level-3:** Sessions 1, 1b. **Built, Level-2:** Sessions 2, 3, 4.
-- **Baseline:** `pytest -v` → **39 passed** (no network/keys).
-- **NEXT brick:** **Session 5 — Retry + fallback** (Milestone B, completes
-  construction-spec Milestone 1). Gate-in requires the operator's Level-3 run
-  of Sessions 2–4 (`pytest -v` + a real-key CLI run under two `MODEL_POLICY`
-  values to see the routing selection change).
+- **Done & Level-3:** Sessions 1, 1b. **Built, Level-2:** Sessions 2, 3, 4, 5.
+- **Baseline:** `pytest -v` → **46 passed** (no network/keys).
+- **Milestone B / construction-spec Milestone 1: code-complete at Level 2** —
+  model abstraction, registry, routing, retry/fallback all built.
+- **NEXT brick:** **Session 6 — Milestone C, Persistent Project State on
+  Postgres** (Stage 3; per D006 we skip the spec's interim SQLite step). Gate-in
+  requires the operator's Level-3 run of Sessions 2–5 (`pytest -v` + a real-key
+  CLI run under two `MODEL_POLICY` values). Break Session 6 out in full session
+  detail before starting.

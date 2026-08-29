@@ -118,3 +118,29 @@ building a ledger now would be speculative.
 name is a clean, catchable model-layer error, not a `KeyError` leaking upward.
 **Reversible:** Yes — the registry is additive; the factory contract is
 unchanged, so reverting to calling the factory directly would be mechanical.
+
+### D008 — Retry is provider-agnostic and complete; a live fallback needs a second registered model
+**Date:** Session 5
+**Decision:** Built `core/models/retry.py` with `call_with_retry()` (capped
+exponential backoff, retryable errors only) and `generate_with_retry()`
+(resolve a logical model via the registry, generate under retry, try one
+configured fallback logical model if the primary exhausts retries on a
+retryable error). Added `Settings.model_fallback` (env `MODEL_FALLBACK`,
+default empty). The CLI's generate call now goes through `generate_with_retry`.
+**Retryable set (honors CONTRACTS.md):** only `ModelRateLimitError`,
+`ModelTimeoutError`, `ModelUnavailableError` are retried. `ModelAuthError`,
+`ModelInvalidRequestError`, and `ModelNotRegisteredError` fail fast — retrying
+them wastes calls and money.
+**Honest limitation, stated not hidden:** the retry loop is fully useful today
+(it survives a transient error on the single active provider — the Milestone 1
+bar). The *fallback*, however, only changes the outcome once the fallback
+logical name resolves to a different provider/model than the primary. Because
+the registry currently builds one active provider and maps every logical name
+to its single default model (D007), a live fallback resolves to the same place
+as the primary. The mechanism is complete and unit-proven with distinct fake
+providers; wiring a genuinely different fallback model is unblocked the moment a
+second provider/model is registered — no code change to retry.py required.
+**`sleep` is injected** (defaults to `time.sleep`) so the automated tests prove
+the full backoff/fallback logic with zero real waiting.
+**Reversible:** Yes — retry wraps the existing generate call; removing it
+returns to a direct `provider.generate()` with no contract change.

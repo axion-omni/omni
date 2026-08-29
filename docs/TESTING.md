@@ -109,3 +109,17 @@ The `[... — policy=<policy> -> <logical>]` tag (and the `core.models.routing`
 log line) is the **Level-3** proof for Session 4. Note: until a second concrete
 model is registered (D007), both resolve to the same provider model — the
 *routing selection* is what visibly changes.
+
+## Retry + fallback tests (Session 5)
+
+`pytest -v` now runs **46 tests** (39 prior + 7 retry). `tests/test_retry.py`
+proves the Session 5 acceptance criteria with an injected `sleep` (no real
+waiting) and no network: a provider that fails twice then succeeds still
+returns; a provider that always fails with a retryable error triggers the
+fallback once; a non-retryable error (auth/invalid) fails fast with no retry
+and never triggers the fallback; backoff follows 1s/2s. All mocked.
+
+Manual note: retry/fallback have no dedicated live smoke test — a transient
+provider error is not reliably reproducible on demand. The retry path is
+exercised implicitly by any real CLI run; the fallback becomes observable once
+`MODEL_FALLBACK` resolves to a genuinely different model (D008).
