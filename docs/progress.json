@@ -1,8 +1,8 @@
 {
-  "overall_progress_pct": 3,
+  "overall_progress_pct": 4,
   "current_milestone": "M1 - system can communicate with models",
   "current_stage": "Stage 1 - Basic AI interface",
-  "current_brick": "Session 2",
+  "current_brick": "Session 2 (next)",
   "build_protocol_adopted": true,
   "verification_level_current_brick": 2,
   "completed_bricks": [
@@ -20,12 +20,29 @@
       "tests_passing": 4,
       "commit": "5def786",
       "verification_level": 2
+    },
+    {
+      "id": "S1b",
+      "title": "OpenRouter provider + minimal provider factory (out-of-sequence, D004)",
+      "files": [
+        "core/models/providers/openrouter_provider.py",
+        "core/models/factory.py",
+        "core/config.py (extended, not rewritten)",
+        "tests/test_openrouter_provider.py",
+        "tests/test_factory.py",
+        "scripts/smoke_test_openrouter.py"
+      ],
+      "tests_passing": 10,
+      "commit": "PENDING",
+      "verification_level": 2
     }
   ],
   "next_brick": "S2",
   "blocked_bricks": [],
   "open_questions": [],
-  "open_risks": [],
+  "open_risks": [
+    "OpenRouter free-tier model slugs rotate; default may need updating via OPENROUTER_MODEL env var over time"
+  ],
   "decisions_required": [],
   "failed_experiments": []
 }

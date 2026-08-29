@@ -15,22 +15,35 @@ core/
     ├── base.py                        ModelProvider ABC, ModelResponse,
     │                                   ModelCapabilities — see CONTRACTS.md
     ├── exceptions.py                  Shared exception hierarchy
+    ├── factory.py                     Minimal provider switch (NOT the
+    │                                   Session 3 registry — see below)
     └── providers/
-        └── anthropic_provider.py      Only file that imports the `anthropic`
-                                         SDK. Implements ModelProvider.
+        ├── anthropic_provider.py      Only file that imports the `anthropic`
+        │                               SDK. Implements ModelProvider.
+        └── openrouter_provider.py     Only file that talks to OpenRouter's
+                                         REST API. Implements ModelProvider.
+                                         Added for dev/testing without
+                                         Anthropic credits — unchanged
+                                         Anthropic path stays fully intact.
 ```
 
 **How components interact today:**
 
 ```
 caller → core.config.load_settings() → Settings
-caller → AnthropicProvider(api_key=settings.anthropic_api_key)
+caller → core.models.factory.get_active_provider(settings) → ModelProvider
+             (returns AnthropicProvider or OpenRouterProvider based on
+              settings.active_provider — default is "anthropic",
+              switching costs one env var, zero code changes)
 caller → provider.generate(prompt, ...) → ModelResponse
 ```
 
-There is no registry, no routing, no CLI, no memory layer, no tools, and no
-agents yet — those are Sessions 3+ (see ROADMAP.md). Nothing in this repo
-should be assumed to exist beyond what's listed above without checking.
+There is no full registry, no capability-based routing, no CLI, no memory
+layer, no tools, and no agents yet — those are Sessions 3+ (see ROADMAP.md).
+`core/models/factory.py` is a deliberately minimal stand-in for the routing
+piece of Session 3, added out of sequence to unblock testing while no
+Anthropic credits are available — see DECISIONS.md D004. Nothing in this
+repo should be assumed to exist beyond what's listed above without checking.
 
 ## Rule enforced by this structure
 

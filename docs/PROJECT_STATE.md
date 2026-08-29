@@ -5,37 +5,41 @@ Machine-readable state: `docs/progress.json` (kept in sync with this file).
 ## Overall
 - **Current milestone:** Milestone 1 — "The system can communicate with models" (in progress)
 - **Current stage:** Stage 1 — Basic AI interface
-- **Current brick:** Session 1 (COMPLETE, verified level 2 only — not yet
-  confirmed on the operator's own machine) → Session 2 (next)
-- **Build protocol:** as of this update, the project follows the
-  non-negotiable build protocol — docs are source of truth over conversation
-  history, Understand → Inspect → Plan → Implement → Test → Integrate →
-  Verify → Document → Commit for every session, six standing docs maintained
-  (this file, SYSTEM_ARCHITECTURE.md, DECISIONS.md, CONTRACTS.md,
-  ROADMAP.md, TESTING.md).
+- **Current brick:** Out-of-sequence addition complete (OpenRouter provider)
+  → Session 2 (CLI entrypoint) still next
+- **Build protocol:** non-negotiable build protocol in effect — docs are
+  source of truth, Understand → Inspect → Plan → Implement → Test →
+  Integrate → Verify → Document → Commit every session.
 
 ## Completed
 - Repository initialized
 - Model interface (`ModelProvider`, `ModelResponse`, `ModelCapabilities`)
-- Anthropic provider implementation
-- Unit tests (4, passing, mocked — see TESTING.md)
-- Smoke test script written (not yet run against a real key/machine)
-- Docs restructured to protocol-required filenames
+- Anthropic provider implementation (untouched since Session 1)
+- **OpenRouter provider implementation** (new — dev/testing path while no
+  Anthropic credits available)
+- **Minimal provider factory/switch** (`core/models/factory.py` — temporary,
+  see DECISIONS.md D004)
+- Unit tests: 14 total (4 Anthropic + 3 factory + 7 OpenRouter), all passing,
+  all mocked (verification level 2)
+- Smoke test scripts for both providers written (neither yet run against a
+  real key/machine — verification level 3 still pending for both)
+- All six standing docs current as of this update
 
 ## In progress
-- Confirming Session 1 at verification level 3 (operator's own machine,
-  own API key) — outcome pending, not yet reported back.
+- Verification level 3 pending for both providers — operator has not yet
+  confirmed `pytest -v` or either smoke test on their own machine.
 
 ## Blocked
-- None.
+- None. (OpenRouter path exists specifically because Anthropic credits are
+  currently unavailable — this is noted, not a blocker for continued work.)
 
 ## Decisions pending
-- None new since DECISIONS.md D001–D003.
+- None new since D004.
 
 ## Next
-- Session 2 — CLI entrypoint + config hardening (see ROADMAP.md / Master
-  Construction Specification Part VII for full session spec).
+- Confirm this addition at verification level 3 (operator's machine, real
+  OpenRouter key — free, no card needed).
+- Then: Session 2 — CLI entrypoint + config hardening (ROADMAP.md).
 
 ## Last verified
-Level 2 only (assistant's sandbox). Level 3 (operator's machine) not yet
-confirmed as of this update.
+Level 2 only (assistant's sandbox, all 14 tests). Level 3 not yet confirmed.

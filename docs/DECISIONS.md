@@ -35,3 +35,22 @@ framework gets imported into `core/`.
 system to be reachable from PC, phone, browser, and Telegram without
 duplicated logic. Retrofitting this later is expensive; it's nearly free
 if respected from Session 1 onward.
+
+### D004 — OpenRouter added as a second provider, ahead of the Session 3 registry
+**Date:** post-Session 1, pre-Session 2
+**Decision:** Added `OpenRouterProvider` (implements the existing
+`ModelProvider` interface) plus a minimal `core/models/factory.py` that
+switches between it and `AnthropicProvider` via one env var
+(`ACTIVE_PROVIDER`). Default model: `meta-llama/llama-3.3-70b-instruct:free`.
+**Why:** No Anthropic API credits currently available for local testing.
+This unblocks development without waiting on funding, and without touching
+the Anthropic path at all.
+**What was NOT touched:** `core/models/providers/anthropic_provider.py` —
+zero lines changed. `AnthropicProvider` remains the default
+(`ACTIVE_PROVIDER=anthropic`) and is fully intact for when credits return.
+**Scope note:** `factory.py` is intentionally minimal — a flat env-var
+switch, not the capability/cost-aware Model Registry planned for Session 3
+in ROADMAP.md. It exists to unblock testing today; Session 3 absorbs or
+replaces it. This is a known, logged overlap, not an accidental duplication.
+**Reversible:** Yes — switching back to Anthropic-only requires no code
+change, just `ACTIVE_PROVIDER=anthropic` (already the default).

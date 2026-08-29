@@ -39,3 +39,22 @@ contract holds.
    yourself. **This is the only level that counts as "done."**
 
 No brick is marked complete in PROJECT_STATE.md until it has reached level 3.
+
+## OpenRouter provider tests (added post-Session 1)
+
+```
+pytest -v
+```
+Now runs 14 tests total (4 Anthropic + 3 factory + 7 OpenRouter), all
+mocked — no network or API key required for the automated suite.
+
+## Live verification for OpenRouter (separate, real network, still $0)
+
+```
+python scripts/smoke_test_openrouter.py
+```
+Requires a real `OPENROUTER_API_KEY` in `.env` (free, no card, from
+https://openrouter.ai/keys) and `ACTIVE_PROVIDER=openrouter`. This is the
+level-3 check for the OpenRouter path specifically — running it does not
+verify the Anthropic path, and vice versa. Both smoke tests are independent;
+neither is run by `pytest` or CI.
