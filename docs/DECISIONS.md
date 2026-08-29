@@ -65,3 +65,22 @@ change, just `ACTIVE_PROVIDER=anthropic` (already the default).
 `ACTIVE_PROVIDER` and defeat the point of D004 — the CLI is the first real
 consumer of the provider switch, so it has to actually use it.
 **Reversible:** Yes — no different than any other factory consumer.
+
+### D006 — Destination expanded to a phone-first, cloud-first Personal AI OS
+**Date:** post-Session 2, pre-Session 3 (handoff point)
+**Decision:** The project's destination architecture is now
+`PERSONAL_AI_OS_MASTER_ARCHITECTURE.md` — a superset of the original
+`AI_Project_Execution_Engine.md`, adding: Telegram/phone interface, cloud
+deployment as the normal runtime (not the PC), async job queue + background
+workers, and a revised milestone sequence (Milestones A–L) that maps
+Sessions 1–2 (already done) onto Milestones A and part of B.
+**Why:** The original destination assumed a local, synchronous, terminal-
+operated system. The actual intent was always a remotely-usable system —
+this decision formalizes that and gives it a concrete architecture instead
+of leaving it implicit.
+**What was NOT invalidated:** every existing contract (`ModelProvider`,
+the exception hierarchy, the factory pattern, the six-doc structure, the
+build protocol itself) carries forward unchanged. This is an extension of
+scope, not a redesign of what's built.
+**Reversible:** The cloud/phone layers are additive on top of `core/` —
+if this direction changed again, `core/` would not need to be rewritten.

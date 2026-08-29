@@ -57,5 +57,7 @@
     "OpenRouter free-tier model slugs rotate; default may need updating via OPENROUTER_MODEL env var over time"
   ],
   "decisions_required": [],
-  "failed_experiments": []
+  "failed_experiments": [],
+  "destination_doc": "PERSONAL_AI_OS_MASTER_ARCHITECTURE.md (see D006)",
+  "handoff_note": "Repo handed off for continuation by a Claude Opus 5 agent at this point. Next brick: Session 3 (model registry), which also satisfies part of Milestone B in the new destination doc."
 }
