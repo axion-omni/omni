@@ -32,6 +32,16 @@ stages complete so it never drifts far from that source document.
 Sessions 3–5 complete construction-spec **Milestone 1** (Stages 0–2, "can
 communicate with models") at Level 2 — pending the operator's Level-3 run.
 
+**Milestone 2 (Stage 3) — persistent project state on Postgres** (see
+`MILESTONE_C_PLAN.md` for the session breakdown):
+
+| Session | Deliverable | Status |
+|---|---|---|
+| 6 | DB access seam + config (D009, Postgres-first) | ⏳ Built, Level 2 — operator L3 pending |
+| 7 | Constitution schema + migration | Planned |
+| 8 | Constitution repository (create/read/append) | Planned |
+| 9 | CLI wiring + persist-across-redeploy proof | Planned |
+
 Sessions 6+ (Stage 3 onward) get broken out here as Milestone 1 completes —
 see the Master Construction Specification's own note on why they're not
 pre-specified in full daily-session detail yet.

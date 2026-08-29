@@ -94,6 +94,7 @@ class Settings:
     openrouter_api_key: str
     openrouter_model: str
     model_fallback: str      # logical name tried once if primary exhausts retries; "" = none
+    database_url: str = ""   # Postgres connection string; "" = no database configured
 ```
 
 Sourced only from environment variables (`.env` locally). No component
@@ -215,6 +216,29 @@ def generate_with_retry(
 - Per D008: the fallback only changes the outcome once it resolves to a
   different provider/model than the primary (needs a second registered model).
 
+## Memory access seam (core/memory) — Session 6 (Milestone C)
+
+```python
+# core/memory/exceptions.py
+MemoryError                     # base
+├── DatabaseNotConfiguredError  # DATABASE_URL empty
+└── DatabaseConnectionError     # driver/connection failure
+
+# core/memory/db.py
+def connect(settings, *, connector=None) -> connection: ...
+def ping(settings, *, connector=None) -> bool: ...
+```
+
+**Agreements:**
+- `core/memory/db.py` is the **only** place the Postgres driver is imported
+  (lazily), just as provider SDKs live only in `core/models/providers/` (D009).
+- `connect()` raises `DatabaseNotConfiguredError` when `DATABASE_URL` is empty
+  and `DatabaseConnectionError` (never a raw driver exception) on failure.
+- `connector` is injectable so callers/tests supply a fake connection without a
+  driver or a live DB — the same injection pattern as the model providers.
+- No schema or queries live here yet. The Constitution schema (Session 7) and
+  repository (Session 8) build on this seam.
+
 ## `OpenRouterProvider` (core/models/providers/openrouter_provider.py)
 
 Implements `ModelProvider` exactly like `AnthropicProvider` does. Talks to
@@ -225,6 +249,7 @@ OpenRouter rotate over time.
 
 ## Not yet defined (will be added here when built)
 
+- Constitution schema + repository (`core.memory`) — Sessions 7–8
 - Tool interface (`core.tools.Tool`) — Session ~9+
 - Agent contract (task/output shape every agent returns) — Session ~11+
 - Task graph node schema — Session ~13+

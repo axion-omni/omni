@@ -144,3 +144,28 @@ second provider/model is registered — no code change to retry.py required.
 the full backoff/fallback logic with zero real waiting.
 **Reversible:** Yes — retry wraps the existing generate call; removing it
 returns to a direct `provider.generate()` with no contract change.
+
+### D009 — Persistence is PostgreSQL from the start (no SQLite step); DB access behind a seam
+**Date:** Session 6 (Milestone C)
+**Decision:** Build the persistence layer directly on PostgreSQL, skipping the
+construction spec's interim SQLite stage (Part IV / Stage 3). Introduced
+`core/memory/` with a single database access seam (`core/memory/db.py`,
+`connect()`/`ping()`) that turns `DATABASE_URL` into a connection — nothing else
+imports the Postgres driver. Added `Settings.database_url` (env `DATABASE_URL`,
+default empty) and `infra/docker-compose.yml` (pgvector image) for local dev.
+**Why:** the destination (D006, Milestone C) requires project state to survive a
+**cloud redeploy**. SQLite on a local disk does not survive a Render redeploy,
+so building the SQLite step first would be throwaway work. The same Postgres
+instance also carries into Milestone E's pgvector RAG — one backend, not two.
+**Generalizes D002 to storage:** just as provider SDKs live only in
+`core/models/providers/`, the DB driver lives only in `core/memory/`, keeping
+the backend swappable (Part XXII).
+**What was NOT changed:** model layer, CLI chat path, exception hierarchy.
+`Settings` gained one trailing defaulted field, so existing constructors are
+untouched. `psycopg` is imported lazily (like the `anthropic` SDK), so the test
+suite needs neither the driver nor a live database — DB-touching tests skip when
+`DATABASE_URL` is unset.
+**Consequence for dev:** local development now needs a Postgres — Docker via
+`infra/docker-compose.yml`, or a dev-tier managed instance.
+**Reversible:** Yes — the seam + repository pattern confine a backend change to
+`core/memory/`, not callers.

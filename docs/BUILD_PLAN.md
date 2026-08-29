@@ -146,12 +146,23 @@ pending the operator's Level-3 run.
 
 ## Milestone C — Persistent project state on Postgres
 
-- `[ ]` Builds: `core/memory/store.py` (repository pattern, Part XXII) and a
-  **Project Constitution** persisted in PostgreSQL; CLI create/read/update.
-  New contract: Constitution schema (add to CONTRACTS.md).
-  **Test gate (L2):** Constitution is created, read, and updated across two
-  separate process runs (construction-spec Stage 3 criterion), tests against a
-  local/dev Postgres. **L3:** a Constitution created via the CLI **survives a
+Broken into sessions in **`MILESTONE_C_PLAN.md`**. Summary status:
+
+- `[~]` **Session 6 — DB access seam + config (D009).** *Built — Level 2.*
+  `core/memory/db.py` (`connect`/`ping` over `DATABASE_URL`, lazy psycopg,
+  injectable connector), `MemoryError` hierarchy, `Settings.database_url`,
+  `infra/docker-compose.yml` (pgvector). **L2: ✅ 53 passed, 1 skipped** (live
+  ping skips without a DB). **L3 (pending):** `docker compose up` + real ping.
+- `[ ]` **Session 7 — Constitution schema + migration.** New contract:
+  Constitution schema (add to CONTRACTS.md). L2: migration applies to a fresh DB
+  (skips without one). L3: migration runs on the operator's Postgres.
+- `[ ]` **Session 8 — Constitution repository** (`core/memory/constitution.py`):
+  create / read / **append-only** update (versioned, never in-place; per-project
+  scoped). L2: integration test on a test DB, skips without one. L3: create+read
+  from a shell.
+- `[ ]` **Session 9 — CLI wiring + persist proof.** `constitution
+  create/show/amend`. L2: CLI tests with an injected fake repo.
+  **L3 = the milestone bar:** a Constitution created via the CLI **survives a
   redeploy** of the cloud instance (destination Milestone C).
 - Depends on: **B (Level 3)**.
 
@@ -294,12 +305,10 @@ interfaces (web dashboard, native app, full voice).
 
 ## Where we are right now
 
-- **Done & Level-3:** Sessions 1, 1b. **Built, Level-2:** Sessions 2, 3, 4, 5.
-- **Baseline:** `pytest -v` → **46 passed** (no network/keys).
-- **Milestone B / construction-spec Milestone 1: code-complete at Level 2** —
-  model abstraction, registry, routing, retry/fallback all built.
-- **NEXT brick:** **Session 6 — Milestone C, Persistent Project State on
-  Postgres** (Stage 3; per D006 we skip the spec's interim SQLite step). Gate-in
-  requires the operator's Level-3 run of Sessions 2–5 (`pytest -v` + a real-key
-  CLI run under two `MODEL_POLICY` values). Break Session 6 out in full session
-  detail before starting.
+- **Done & Level-3:** Sessions 1, 1b. **Built, Level-2:** Sessions 2, 3, 4, 5, 6.
+- **Baseline:** `pytest -v` → **53 passed, 1 skipped** (live DB ping; no
+  network/keys).
+- **Milestone B / construction-spec Milestone 1: code-complete at Level 2.**
+  **Milestone C: started** — DB access seam (Session 6) in.
+- **NEXT brick:** **Session 7 — Constitution schema + migration**
+  (see MILESTONE_C_PLAN.md).

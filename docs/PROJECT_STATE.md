@@ -3,9 +3,9 @@
 Machine-readable state: `docs/progress.json` (kept in sync with this file).
 
 ## Overall
-- **Current milestone:** Milestone 1 — "can communicate with models" — all 5 sessions built (Level 2); construction-spec M1 code-complete
-- **Current stage:** Stage 2 complete (model abstraction, registry, routing, retry/fallback) → Stage 3 (persistent project state) next
-- **Current brick:** Session 5 (retry + fallback) built, Level 2 → Session 6 (Stage 3, project state) next
+- **Current milestone:** Milestone 2 (Stage 3) — persistent project state on Postgres — started (Session 6 of ~9 built, Level 2). Milestone 1 code-complete (L2).
+- **Current stage:** Stage 3 — Persistent Project State. DB access seam in; schema/repository/CLI next.
+- **Current brick:** Session 6 (DB access seam + config, D009) built, Level 2 → Session 7 (Constitution schema + migration) next
 - **Build protocol:** non-negotiable build protocol in effect.
 
 ## Completed
@@ -27,32 +27,33 @@ Machine-readable state: `docs/progress.json` (kept in sync with this file).
   (registry-resolved primary, one fallback logical model on retry-exhaustion);
   `Settings.model_fallback` (env `MODEL_FALLBACK`); CLI generate now goes
   through it (D008). Level 2.
-- 46 unit tests total, all passing (level 2 — assistant sandbox)
+- Session 6 — DB access seam (`core/memory/db.py`): `connect()`/`ping()` over
+  `DATABASE_URL`, lazy psycopg import, injectable connector; `MemoryError`
+  hierarchy; `Settings.database_url`; `infra/docker-compose.yml` (pgvector);
+  psycopg added to requirements. No schema yet. D009 (Postgres-first). Level 2.
+- 53 unit tests passing, 1 skipped (live DB ping) — level 2, assistant sandbox.
 - Full chain CLI → routing → registry → factory → provider → retry confirmed
   wired with injected fakes; real (non-injected) runs show the routing
   decision changing with MODEL_POLICY and a clean fast-fail with no key —
   still not run with a real key by the operator.
 
 ## In progress
-- Verification level 3 pending for Sessions 2–5 — operator has not yet run
-  the CLI with a real key.
+- Verification level 3 pending for Sessions 2–5 (CLI with a real key) and
+  Session 6 (live Postgres ping) — operator has not yet run either.
 
 ## Blocked
 - None.
 
 ## Decisions pending
-- None new since D008.
+- None new since D009.
 
 ## Next
-- Operator: run `pytest -v` (expect 46 passed) and, with a real key in `.env`,
-  `MODEL_POLICY=cheap python apps/cli/main.py "say hello"` then
-  `MODEL_POLICY=quality ...` — confirm the printed selection / routing log line
-  changes (Sessions 2–5 L3 in one go). This closes construction-spec
-  Milestone 1 at Level 3.
-- Then: Session 6 — Stage 3, Persistent Project State (Project Constitution).
-  Per D006 the destination requires Postgres (Milestone C), skipping the
-  spec's interim SQLite step — see BUILD_PLAN.md. Break out Session 6 in full
-  session detail before starting (Construction Spec Part VII note).
+- Operator (optional, anytime): Sessions 2–5 L3 — `pytest -v` (expect 53
+  passed, 1 skipped) + real-key CLI under two `MODEL_POLICY` values.
+- Operator Session 6 L3: `docker compose -f infra/docker-compose.yml up -d`,
+  set `DATABASE_URL` in `.env`, run `pytest -v` and see the previously-skipped
+  `test_ping_live_database` pass.
+- Then: Session 7 — Constitution schema + migration (see MILESTONE_C_PLAN.md).
 
 ## Last verified
-Level 3 confirmed for Sessions 1 and 1b. Sessions 2, 3, 4, 5: level 2 only so far.
+Level 3 confirmed for Sessions 1 and 1b. Sessions 2, 3, 4, 5, 6: level 2 only so far.

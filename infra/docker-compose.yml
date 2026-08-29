@@ -1,0 +1,34 @@
+# Local development Postgres for Milestone C onward.
+#
+#   docker compose -f infra/docker-compose.yml up -d
+#
+# Uses the pgvector image so the vector extension is available now, even though
+# Milestone C doesn't use vectors yet — this saves a swap at Milestone E
+# ("one fewer moving part", per the destination architecture, Section 7).
+#
+# Then point the app at it in your local .env:
+#   DATABASE_URL=postgresql://engine:engine@localhost:5432/engine
+#
+# This is a DEV convenience only. Production uses Render/Supabase managed
+# Postgres with the connection string in the host secret manager, never here.
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: engine-postgres
+    environment:
+      POSTGRES_USER: engine
+      POSTGRES_PASSWORD: engine
+      POSTGRES_DB: engine
+    ports:
+      - "5432:5432"
+    volumes:
+      - engine_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U engine -d engine"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  engine_pgdata:

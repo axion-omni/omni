@@ -34,6 +34,13 @@ class Settings:
     # exhausts its retries on a retryable error. Empty means "no fallback".
     model_fallback: str
 
+    # --- Session 6 (Milestone C): Postgres connection string. Empty means
+    # "no database configured" — callers that need persistence raise a clear
+    # error rather than silently connecting to nothing. Defaulted so the many
+    # existing Settings constructors (tests) need no change; sourced from
+    # DATABASE_URL. Kept in the host secret manager in prod, .env locally.
+    database_url: str = ""
+
 
 def load_settings() -> Settings:
     return Settings(
@@ -45,4 +52,5 @@ def load_settings() -> Settings:
             "OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free"
         ),
         model_fallback=os.environ.get("MODEL_FALLBACK", ""),
+        database_url=os.environ.get("DATABASE_URL", ""),
     )

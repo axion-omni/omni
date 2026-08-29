@@ -123,3 +123,22 @@ Manual note: retry/fallback have no dedicated live smoke test — a transient
 provider error is not reliably reproducible on demand. The retry path is
 exercised implicitly by any real CLI run; the fallback becomes observable once
 `MODEL_FALLBACK` resolves to a genuinely different model (D008).
+
+## Memory / DB seam tests (Session 6)
+
+`pytest -v` now runs **53 tests, 1 skipped**. `tests/test_db.py` proves config
+reads `DATABASE_URL`, `connect()` fails clearly when it is empty
+(`DatabaseNotConfiguredError`), driver errors are translated
+(`DatabaseConnectionError`), and `connect()/ping()` work through an **injected
+fake connector** — so the suite needs neither the `psycopg` driver nor a live
+database. The single live check, `test_ping_live_database`, **skips** unless
+`DATABASE_URL` is set.
+
+**Level-3 (operator):**
+```
+docker compose -f infra/docker-compose.yml up -d      # local Postgres (pgvector)
+# put DATABASE_URL=postgresql://engine:engine@localhost:5432/engine in .env
+pytest -v        # test_ping_live_database now runs and passes (52+2 = 53 run)
+```
+This confirms the seam connects to a real Postgres — the gate before Session 7's
+schema.

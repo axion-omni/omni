@@ -40,12 +40,25 @@ core/
                                          Added for dev/testing without
                                          Anthropic credits — unchanged
                                          Anthropic path stays fully intact.
+core/
+└── memory/                            Persistence layer (Milestone C, Session 6+).
+    ├── exceptions.py                  MemoryError hierarchy (Not-configured,
+    │                                   Connection) — mirrors the model layer.
+    └── db.py                          DB access seam. Only file that imports the
+                                         Postgres driver (lazy). connect()/ping()
+                                         over DATABASE_URL; connector injectable.
+                                         No schema yet (schema = Session 7).
 apps/
 └── cli/
     └── main.py                        Thin terminal interface. Reads argv
                                          (incl. optional --model <logical>),
                                          resolves via the registry, prints
                                          output. No logic beyond that here.
+infra/
+└── docker-compose.yml                 Local dev Postgres (pgvector image).
+                                         Dev convenience only; prod uses managed
+                                         Postgres with the URL in the host secret
+                                         manager.
 ```
 
 **How components interact today:**
@@ -66,26 +79,32 @@ python apps/cli/main.py "<prompt>" [--model <logical-name>]
     → printed to stdout (text) / stderr (usage + selection + errors)
 ```
 
-There is no memory layer, no tools, and no agents yet — those are Sessions 6+
-(see ROADMAP.md and BUILD_PLAN.md). Model routing is now complete: routing
-(Session 4) maps a (task_type, MODEL_POLICY) pair to a logical name and logs
-the decision; the registry resolves that name to a concrete (provider,
-model_id); retry (Session 5) wraps the call with capped exponential backoff for
-retryable errors only and one configured fallback. Today every logical name
-resolves to the active provider's single default model (D007), so flipping
-`MODEL_POLICY` changes the logical selection + logged decision for an identical
-prompt, and the fallback becomes meaningful once a second model is registered
-(D008). `core/models/factory.py` remains the single place that selects a
-provider from `ACTIVE_PROVIDER`. Nothing in this repo should be assumed to exist
-beyond what's listed above without checking.
+The **memory layer exists only as a connection seam** (`core/memory/db.py`,
+Session 6): it can connect to Postgres and health-check it, but there is **no
+schema, no Constitution, and no persistence yet** — the chat path above does not
+touch it. Schema is Session 7, the Constitution repository Session 8, CLI
+persistence Session 9 (see MILESTONE_C_PLAN.md). There are still no tools and no
+agents. Model routing is complete: routing (Session 4) maps a (task_type,
+MODEL_POLICY) pair to a logical name and logs the decision; the registry
+resolves that name to a concrete (provider, model_id); retry (Session 5) wraps
+the call with capped exponential backoff for retryable errors only and one
+configured fallback. Today every logical name resolves to the active provider's
+single default model (D007), so flipping `MODEL_POLICY` changes the logical
+selection + logged decision for an identical prompt, and the fallback becomes
+meaningful once a second model is registered (D008). `core/models/factory.py`
+remains the single place that selects a provider from `ACTIVE_PROVIDER`. Nothing
+in this repo should be assumed to exist beyond what's listed above without
+checking.
 
 ## Rule enforced by this structure
 
-No file outside `core/models/providers/` imports a provider SDK directly.
-This is what lets a second provider be added later as a new file + a
-registry entry (once the registry exists), not a rewrite of callers.
+No file outside `core/models/providers/` imports a provider SDK directly, and
+no file outside `core/memory/` imports the database driver directly (D002,
+generalized to storage in D009). This is what lets a provider or a storage
+backend be swapped as a localized change, not a rewrite of callers.
 
 ## Last verified against actual code
-Commit `3e3b63e` + Session 5 (retry + fallback). `pytest -v` → 46 passed in the
-assistant sandbox (Level 2). If this file and the actual `core/` tree
-disagree, the code wins — flag it, don't silently trust this doc.
+Commit `ceaa514` + Session 6 (DB access seam). `pytest -v` → 53 passed, 1
+skipped (the live DB ping, skipped without DATABASE_URL) in the assistant
+sandbox (Level 2). If this file and the actual `core/` tree disagree, the code
+wins — flag it, don't silently trust this doc.
