@@ -77,6 +77,11 @@ gate after each, and only mark Level 3 when you verify.
 - **Test gate (L2):** migration applies cleanly to a fresh DB in a test
   (or is skipped without a DB); schema shape asserted.
 - **L3 (you):** run the migration against your local Postgres; table exists.
+- **STATUS: ✅ Built (Level 2).** Delivered `core/memory/models.py` (13-field
+  Constitution, Pydantic), `infra/migrations/0001_init.sql` (append-only,
+  versioned, per-project), `core/memory/migrations.py` (forward-only runner) +
+  `infra/migrate.py`. Chose plain SQL over Alembic (D010). 59 passed, 2 skipped.
+  L3 pending: `python infra/migrate.py` against your Postgres.
 
 ### Session 8 — Constitution repository (create / read / update-as-append)
 - **Adds:** `core/memory/constitution.py` — a repository class with

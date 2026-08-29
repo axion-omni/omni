@@ -239,6 +239,43 @@ def ping(settings, *, connector=None) -> bool: ...
 - No schema or queries live here yet. The Constitution schema (Session 7) and
   repository (Session 8) build on this seam.
 
+## Constitution schema (core/memory/models.py + infra/migrations) — Session 7
+
+```python
+class Constitution(BaseModel):   # 13 fields, AI_Project_Execution_Engine.md §2
+    mission: str = ""
+    purpose: str = ""
+    desired_outcome: str = ""
+    success_criteria: list[str] = []
+    constraints: list[str] = []
+    assumptions: list[str] = []
+    non_negotiables: list[str] = []
+    available_resources: list[str] = []
+    known_facts: list[str] = []
+    unknowns: list[str] = []
+    risks: list[str] = []
+    decisions: list[str] = []
+    change_history: list[str] = []   # append-only, owned by the repository
+```
+
+Tables (`infra/migrations/0001_init.sql`): `projects(id, name, created_at)` and
+`constitutions(id, project_id→projects, version, content jsonb, created_at,
+unique(project_id, version))`. **Append-only + versioned + per-project scoped**
+(D010).
+
+```python
+# core/memory/migrations.py — forward-only runner
+def discover_migrations(dir=MIGRATIONS_DIR) -> list[Migration]: ...
+def pending(migrations, applied: set[str]) -> list[Migration]: ...
+def run(settings=None, *, connector=None, migrations_dir=MIGRATIONS_DIR) -> list[str]: ...
+```
+
+**Agreements:** the Constitution is stored one JSONB row per version, never
+overwritten; every write appends to `change_history` and bumps `version`
+(repository enforces this — Session 8). Migrations are plain SQL applied in
+lexical order, tracked in `schema_migrations`, forward-only. `run()` uses the
+`core/memory/db.py` seam (injectable connector).
+
 ## `OpenRouterProvider` (core/models/providers/openrouter_provider.py)
 
 Implements `ModelProvider` exactly like `AnthropicProvider` does. Talks to
@@ -249,7 +286,7 @@ OpenRouter rotate over time.
 
 ## Not yet defined (will be added here when built)
 
-- Constitution schema + repository (`core.memory`) — Sessions 7–8
+- Constitution repository create/read/append (`core.memory.constitution`) — Session 8
 - Tool interface (`core.tools.Tool`) — Session ~9+
 - Agent contract (task/output shape every agent returns) — Session ~11+
 - Task graph node schema — Session ~13+

@@ -3,9 +3,9 @@
 Machine-readable state: `docs/progress.json` (kept in sync with this file).
 
 ## Overall
-- **Current milestone:** Milestone 2 (Stage 3) — persistent project state on Postgres — started (Session 6 of ~9 built, Level 2). Milestone 1 code-complete (L2).
-- **Current stage:** Stage 3 — Persistent Project State. DB access seam in; schema/repository/CLI next.
-- **Current brick:** Session 6 (DB access seam + config, D009) built, Level 2 → Session 7 (Constitution schema + migration) next
+- **Current milestone:** Milestone 2 (Stage 3) — persistent project state on Postgres — in progress (Sessions 6–7 of ~9 built, Level 2). Milestone 1 code-complete (L2).
+- **Current stage:** Stage 3 — Persistent Project State. DB seam + Constitution schema/migration in; repository + CLI next.
+- **Current brick:** Session 7 (Constitution schema + migration, D010) built, Level 2 → Session 8 (Constitution repository) next
 - **Build protocol:** non-negotiable build protocol in effect.
 
 ## Completed
@@ -31,7 +31,12 @@ Machine-readable state: `docs/progress.json` (kept in sync with this file).
   `DATABASE_URL`, lazy psycopg import, injectable connector; `MemoryError`
   hierarchy; `Settings.database_url`; `infra/docker-compose.yml` (pgvector);
   psycopg added to requirements. No schema yet. D009 (Postgres-first). Level 2.
-- 53 unit tests passing, 1 skipped (live DB ping) — level 2, assistant sandbox.
+- Session 7 — Constitution schema + migration: `core/memory/models.py`
+  (13-field Constitution, Pydantic), `infra/migrations/0001_init.sql`
+  (projects + constitutions, append-only/versioned/per-project),
+  `core/memory/migrations.py` forward-only runner + `infra/migrate.py`. D010.
+  Level 2.
+- 59 unit tests passing, 2 skipped (live DB ping + live migration) — level 2.
 - Full chain CLI → routing → registry → factory → provider → retry confirmed
   wired with injected fakes; real (non-injected) runs show the routing
   decision changing with MODEL_POLICY and a clean fast-fail with no key —
@@ -39,21 +44,20 @@ Machine-readable state: `docs/progress.json` (kept in sync with this file).
 
 ## In progress
 - Verification level 3 pending for Sessions 2–5 (CLI with a real key) and
-  Session 6 (live Postgres ping) — operator has not yet run either.
+  Sessions 6–7 (live Postgres: ping + migration apply) — operator not yet run.
 
 ## Blocked
 - None.
 
 ## Decisions pending
-- None new since D009.
+- None new since D010.
 
 ## Next
-- Operator (optional, anytime): Sessions 2–5 L3 — `pytest -v` (expect 53
-  passed, 1 skipped) + real-key CLI under two `MODEL_POLICY` values.
-- Operator Session 6 L3: `docker compose -f infra/docker-compose.yml up -d`,
-  set `DATABASE_URL` in `.env`, run `pytest -v` and see the previously-skipped
-  `test_ping_live_database` pass.
-- Then: Session 7 — Constitution schema + migration (see MILESTONE_C_PLAN.md).
+- Operator Session 6–7 L3: `docker compose -f infra/docker-compose.yml up -d`,
+  set `DATABASE_URL` in `.env`, `python infra/migrate.py` (creates the tables),
+  then `pytest -v` — the two skipped live tests now run and pass.
+- Then: Session 8 — Constitution repository (create/read/append-only update),
+  per MILESTONE_C_PLAN.md.
 
 ## Last verified
-Level 3 confirmed for Sessions 1 and 1b. Sessions 2, 3, 4, 5, 6: level 2 only so far.
+Level 3 confirmed for Sessions 1 and 1b. Sessions 2–7: level 2 only so far.

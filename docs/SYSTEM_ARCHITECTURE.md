@@ -44,10 +44,12 @@ core/
 └── memory/                            Persistence layer (Milestone C, Session 6+).
     ├── exceptions.py                  MemoryError hierarchy (Not-configured,
     │                                   Connection) — mirrors the model layer.
-    └── db.py                          DB access seam. Only file that imports the
-                                         Postgres driver (lazy). connect()/ping()
-                                         over DATABASE_URL; connector injectable.
-                                         No schema yet (schema = Session 7).
+    ├── db.py                          DB access seam. Only file that imports the
+    │                                   Postgres driver (lazy). connect()/ping()
+    │                                   over DATABASE_URL; connector injectable.
+    ├── models.py                     Constitution (Pydantic, 13 fields §2). S7.
+    └── migrations.py                 Forward-only migration runner (discover/
+                                         pending pure; run() applies). S7.
 apps/
 └── cli/
     └── main.py                        Thin terminal interface. Reads argv
@@ -55,10 +57,11 @@ apps/
                                          resolves via the registry, prints
                                          output. No logic beyond that here.
 infra/
-└── docker-compose.yml                 Local dev Postgres (pgvector image).
-                                         Dev convenience only; prod uses managed
-                                         Postgres with the URL in the host secret
-                                         manager.
+├── docker-compose.yml                 Local dev Postgres (pgvector image).
+├── migrate.py                         CLI wrapper: apply pending migrations.
+└── migrations/
+    └── 0001_init.sql                  projects + constitutions (append-only,
+                                         versioned, per-project scoped). S7.
 ```
 
 **How components interact today:**
@@ -79,12 +82,13 @@ python apps/cli/main.py "<prompt>" [--model <logical-name>]
     → printed to stdout (text) / stderr (usage + selection + errors)
 ```
 
-The **memory layer exists only as a connection seam** (`core/memory/db.py`,
-Session 6): it can connect to Postgres and health-check it, but there is **no
-schema, no Constitution, and no persistence yet** — the chat path above does not
-touch it. Schema is Session 7, the Constitution repository Session 8, CLI
-persistence Session 9 (see MILESTONE_C_PLAN.md). There are still no tools and no
-agents. Model routing is complete: routing (Session 4) maps a (task_type,
+The **memory layer now has a schema but no persistence wiring yet**
+(`core/memory/`, Sessions 6-7): `db.py` connects to Postgres, `models.py`
+defines the 13-field Constitution, and `migrations.py` + `infra/migrations/
+0001_init.sql` create the `projects`/`constitutions` tables (append-only,
+versioned, per-project scoped). The **repository that reads/writes it is
+Session 8**, and the chat path above still does not touch the database. There
+are no tools and no agents. Model routing is complete: routing (Session 4) maps a (task_type,
 MODEL_POLICY) pair to a logical name and logs the decision; the registry
 resolves that name to a concrete (provider, model_id); retry (Session 5) wraps
 the call with capped exponential backoff for retryable errors only and one
@@ -104,7 +108,7 @@ generalized to storage in D009). This is what lets a provider or a storage
 backend be swapped as a localized change, not a rewrite of callers.
 
 ## Last verified against actual code
-Commit `ceaa514` + Session 6 (DB access seam). `pytest -v` → 53 passed, 1
-skipped (the live DB ping, skipped without DATABASE_URL) in the assistant
-sandbox (Level 2). If this file and the actual `core/` tree disagree, the code
-wins — flag it, don't silently trust this doc.
+Commit `91d740b` + Session 7 (Constitution schema + migration). `pytest -v` →
+59 passed, 2 skipped (live DB ping + live migration, skipped without
+DATABASE_URL) in the assistant sandbox (Level 2). If this file and the actual
+`core/` tree disagree, the code wins — flag it, don't silently trust this doc.

@@ -1,8 +1,8 @@
 {
   "overall_progress_pct": 20,
-  "current_milestone": "M2 (Stage 3) - persistent project state on Postgres (started); M1 code-complete L2",
-  "current_stage": "Stage 3 - Persistent Project State (DB seam in; schema next)",
-  "current_brick": "Session 7 (next)",
+  "current_milestone": "M2 (Stage 3) - persistent project state on Postgres (in progress); M1 code-complete L2",
+  "current_stage": "Stage 3 - Persistent Project State (DB seam + schema in; repository next)",
+  "current_brick": "Session 8 (next)",
   "build_protocol_adopted": true,
   "verification_level_current_brick": 2,
   "completed_bricks": [
@@ -124,21 +124,38 @@
       "tests_skipped": 1,
       "commit": "bdf9100",
       "verification_level": 2
+    },
+    {
+      "id": "S7",
+      "title": "Constitution schema + migration (Milestone C, D010)",
+      "files": [
+        "core/memory/models.py (13-field Constitution, Pydantic)",
+        "infra/migrations/0001_init.sql (projects + constitutions; append-only/versioned/per-project)",
+        "core/memory/migrations.py (forward-only runner)",
+        "infra/migrate.py (CLI wrapper)",
+        "tests/test_schema.py"
+      ],
+      "tests_passing": 6,
+      "total_tests_after": 59,
+      "tests_skipped": 2,
+      "commit": null,
+      "verification_level": 2
     }
   ],
-  "next_brick": "S7",
+  "next_brick": "S8",
   "blocked_bricks": [],
   "open_questions": [],
   "open_risks": [
     "OpenRouter free-tier model slugs rotate; default may need updating via OPENROUTER_MODEL env var over time",
     "Routing (S4) selects logical names but every name resolves to one concrete model per provider (D007); physical per-tier model differentiation needs a second registered model",
     "Retry (S5) is complete but a live fallback (MODEL_FALLBACK) only changes the outcome once it resolves to a different provider/model than the primary (D008)",
-    "Milestone C introduces a real infra dependency (Postgres) and forward-only migrations (from S7) - the deploy-safety surface of this milestone"
+    "Milestone C uses forward-only SQL migrations against real Postgres - the deploy-safety surface; no destructive/down migrations"
   ],
   "decisions_required": [],
   "failed_experiments": [],
   "milestone_1_status": "code-complete at Level 2 (Sessions 1-5); pending operator Level-3",
-  "milestone_c_plan": "docs/MILESTONE_C_PLAN.md (Sessions 6-9)",
+  "milestone_c_plan": "docs/MILESTONE_C_PLAN.md (Sessions 6-9); S6-S7 built L2",
+  "milestone_d_to_l_plans": "docs/MILESTONE_D_PLAN.md ... MILESTONE_L_PLAN.md, indexed by docs/BUILD_INSTRUCTIONS_INDEX.md (deterministic build specs written ahead)",
   "destination_doc": "PERSONAL_AI_OS_MASTER_ARCHITECTURE.md (see D006)",
-  "handoff_note": "Milestone 1 code-complete at Level 2 (S1-S5). Milestone C (persistent project state on Postgres) STARTED: Session 6 added the DB access seam core/memory/db.py (connect/ping over DATABASE_URL, lazy psycopg, injectable connector), Settings.database_url, infra/docker-compose.yml (pgvector), and D009 (Postgres-first, no SQLite step). 53 tests pass + 1 skipped (live DB ping, skips without DATABASE_URL); suite needs no driver or DB. Operator L3 for S6: `docker compose -f infra/docker-compose.yml up -d`, set DATABASE_URL in .env, `pytest -v` and see test_ping_live_database pass. Next brick: Session 7 = Constitution schema + migration. Session breakdown in docs/MILESTONE_C_PLAN.md; phase route in docs/BUILD_PLAN.md."
+  "handoff_note": "Milestone 1 code-complete L2 (S1-S5). Milestone C in progress: S6 DB seam + S7 Constitution schema/migration built L2 (59 pass, 2 skipped live DB tests). Next brick S8 = Constitution repository (create/read/append-only). Operator L3 for S6-S7: docker compose up, set DATABASE_URL, `python infra/migrate.py`, `pytest -v` (2 live tests then run). Deterministic build specs for the WHOLE remaining path (Milestones D-L) are pre-written in docs/MILESTONE_*_PLAN.md, indexed by docs/BUILD_INSTRUCTIONS_INDEX.md - any agent can execute them without re-deriving design. First phone-usable interface arrives at Milestone D."
 }

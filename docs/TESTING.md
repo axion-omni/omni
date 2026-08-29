@@ -142,3 +142,16 @@ pytest -v        # test_ping_live_database now runs and passes (52+2 = 53 run)
 ```
 This confirms the seam connects to a real Postgres — the gate before Session 7's
 schema.
+
+## Schema tests (Session 7)
+
+`pytest -v` now runs **59 tests, 2 skipped**. `tests/test_schema.py` proves the
+`Constitution` model has exactly the 13 sections, defaults empty, and JSON
+round-trips; migration discovery finds `0001_init` and `pending()` filters
+applied versions; and `run()` applies migrations against an **injected fake
+connection** (no DB). The live apply, `test_run_against_live_database_is_
+idempotent`, **skips** without `DATABASE_URL`.
+
+**Level-3 (operator):** after `docker compose up`, `python infra/migrate.py`
+creates the tables; a second run reports "already up to date"; `pytest -v` then
+runs the two previously-skipped live tests.

@@ -153,9 +153,12 @@ Broken into sessions in **`MILESTONE_C_PLAN.md`**. Summary status:
   injectable connector), `MemoryError` hierarchy, `Settings.database_url`,
   `infra/docker-compose.yml` (pgvector). **L2: ✅ 53 passed, 1 skipped** (live
   ping skips without a DB). **L3 (pending):** `docker compose up` + real ping.
-- `[ ]` **Session 7 — Constitution schema + migration.** New contract:
-  Constitution schema (add to CONTRACTS.md). L2: migration applies to a fresh DB
-  (skips without one). L3: migration runs on the operator's Postgres.
+- `[ ]` **Session 7 — Constitution schema + migration.** *Built — Level 2.*
+  `core/memory/models.py` (13-field Constitution, Pydantic),
+  `infra/migrations/0001_init.sql` (projects + constitutions; append-only,
+  versioned, per-project), `core/memory/migrations.py` (forward-only runner) +
+  `infra/migrate.py`. D010 (plain SQL, no Alembic). **L2: ✅ 59 passed, 2
+  skipped.** L3: `python infra/migrate.py` against a real Postgres.
 - `[ ]` **Session 8 — Constitution repository** (`core/memory/constitution.py`):
   create / read / **append-only** update (versioned, never in-place; per-project
   scoped). L2: integration test on a test DB, skips without one. L3: create+read
@@ -305,10 +308,13 @@ interfaces (web dashboard, native app, full voice).
 
 ## Where we are right now
 
-- **Done & Level-3:** Sessions 1, 1b. **Built, Level-2:** Sessions 2, 3, 4, 5, 6.
-- **Baseline:** `pytest -v` → **53 passed, 1 skipped** (live DB ping; no
-  network/keys).
+- **Done & Level-3:** Sessions 1, 1b. **Built, Level-2:** Sessions 2–7.
+- **Baseline:** `pytest -v` → **59 passed, 2 skipped** (live DB ping + live
+  migration; no network/keys).
 - **Milestone B / construction-spec Milestone 1: code-complete at Level 2.**
-  **Milestone C: started** — DB access seam (Session 6) in.
-- **NEXT brick:** **Session 7 — Constitution schema + migration**
-  (see MILESTONE_C_PLAN.md).
+  **Milestone C: DB seam (S6) + Constitution schema/migration (S7) in;**
+  repository (S8) + CLI/persist-proof (S9) remain.
+- **NEXT brick:** **Session 8 — Constitution repository** (create / read /
+  append-only update). See MILESTONE_C_PLAN.md.
+- **Milestones D–L:** deterministic build specs written ahead of time in
+  `docs/MILESTONE_*_PLAN.md` (see `docs/BUILD_INSTRUCTIONS_INDEX.md`).

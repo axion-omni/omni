@@ -169,3 +169,25 @@ suite needs neither the driver nor a live database — DB-touching tests skip wh
 `infra/docker-compose.yml`, or a dev-tier managed instance.
 **Reversible:** Yes — the seam + repository pattern confine a backend change to
 `core/memory/`, not callers.
+
+### D010 — Constitution is append-only/versioned JSONB; plain-SQL forward-only migrations
+**Date:** Session 7 (Milestone C)
+**Decision:** The Project Constitution (`core/memory/models.py` — 13 fields from
+`AI_Project_Execution_Engine.md` §2, Pydantic) is persisted as **one JSONB row
+per version** in a `constitutions` table scoped by `project_id`, **never updated
+in place**: every change is a new version plus a `change_history` entry. Schema
+changes are plain `.sql` files in `infra/migrations/` applied **forward-only** by
+a small runner (`core/memory/migrations.py`, tracked in `schema_migrations`);
+`infra/migrate.py` is the CLI. **No Alembic / no ORM.**
+**Why:** append-only history is a load-bearing discipline of the engine (§2:
+"versioned, not editable-in-place") — auditability and no silent overwrite.
+Per-project scoping enforces data isolation (destination §11). Plain SQL + a
+tiny runner keeps the dependency surface minimal (same ethos as using
+`requests` over an SDK) and the schema explicit; forward-only avoids destructive
+down-migrations against production data (deploy-safety).
+**What was NOT changed:** model/CLI layers, the `db.py` seam. `psycopg` stays
+only in `core/memory/`. The runner's pure parts (discover/pending) are
+unit-tested; live apply is an operator Level-3 step (skips without
+`DATABASE_URL`). `gen_random_uuid()` is core PostgreSQL 13+ — no extension.
+**Reversible:** the Session 8 repository hides storage; swapping to Alembic/an
+ORM later is localized to `core/memory/` + `infra/`.

@@ -38,9 +38,12 @@ communicate with models") at Level 2 — pending the operator's Level-3 run.
 | Session | Deliverable | Status |
 |---|---|---|
 | 6 | DB access seam + config (D009, Postgres-first) | ⏳ Built, Level 2 — operator L3 pending |
-| 7 | Constitution schema + migration | Planned |
+| 7 | Constitution schema + migration (D010) | ⏳ Built, Level 2 — operator L3 pending |
 | 8 | Constitution repository (create/read/append) | Planned |
 | 9 | CLI wiring + persist-across-redeploy proof | Planned |
+
+Deterministic build specs for Milestones D–L live in `docs/MILESTONE_*_PLAN.md`
+(indexed by `docs/BUILD_INSTRUCTIONS_INDEX.md`).
 
 Sessions 6+ (Stage 3 onward) get broken out here as Milestone 1 completes —
 see the Master Construction Specification's own note on why they're not
