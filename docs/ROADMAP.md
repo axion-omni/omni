@@ -24,7 +24,7 @@ stages complete so it never drifts far from that source document.
 | Session | Deliverable | Status |
 |---|---|---|
 | 1 | Model abstraction + Anthropic provider | ✅ Done — commit `c9925a1` |
-| 2 | CLI entrypoint + config hardening | Next |
+| 2 | CLI entrypoint + config hardening | ✅ Done |
 | 3 | Model registry (logical names → provider+model) | Planned |
 | 4 | Routing table + MODEL_POLICY | Planned |
 | 5 | Retry + fallback logic | Planned |

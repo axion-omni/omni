@@ -54,3 +54,14 @@ in ROADMAP.md. It exists to unblock testing today; Session 3 absorbs or
 replaces it. This is a known, logged overlap, not an accidental duplication.
 **Reversible:** Yes — switching back to Anthropic-only requires no code
 change, just `ACTIVE_PROVIDER=anthropic` (already the default).
+
+### D005 — CLI routes through the factory, not a hardcoded provider
+**Date:** Session 2
+**Decision:** `apps/cli/main.py` calls
+`core.models.factory.get_active_provider(settings)`, never constructs
+`AnthropicProvider` directly, even though the original Session 2 spec
+(written before D004/OpenRouter existed) assumed the latter.
+**Why:** Hardcoding the CLI to Anthropic would silently ignore
+`ACTIVE_PROVIDER` and defeat the point of D004 — the CLI is the first real
+consumer of the provider switch, so it has to actually use it.
+**Reversible:** Yes — no different than any other factory consumer.

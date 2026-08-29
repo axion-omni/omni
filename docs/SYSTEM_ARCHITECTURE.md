@@ -25,20 +25,24 @@ core/
                                          Added for dev/testing without
                                          Anthropic credits — unchanged
                                          Anthropic path stays fully intact.
+apps/
+└── cli/
+    └── main.py                        Thin terminal interface. Reads argv,
+                                         calls core, prints output. No
+                                         logic beyond that lives here.
 ```
 
 **How components interact today:**
 
 ```
-caller → core.config.load_settings() → Settings
-caller → core.models.factory.get_active_provider(settings) → ModelProvider
-             (returns AnthropicProvider or OpenRouterProvider based on
-              settings.active_provider — default is "anthropic",
-              switching costs one env var, zero code changes)
-caller → provider.generate(prompt, ...) → ModelResponse
+python apps/cli/main.py "<prompt>"
+    → core.config.load_settings() → Settings
+    → core.models.factory.get_active_provider(settings) → ModelProvider
+    → provider.generate(prompt) → ModelResponse
+    → printed to stdout (text) / stderr (usage + errors)
 ```
 
-There is no full registry, no capability-based routing, no CLI, no memory
+There is no full registry, no capability-based routing, no memory
 layer, no tools, and no agents yet — those are Sessions 3+ (see ROADMAP.md).
 `core/models/factory.py` is a deliberately minimal stand-in for the routing
 piece of Session 3, added out of sequence to unblock testing while no

@@ -1,8 +1,8 @@
 {
-  "overall_progress_pct": 4,
+  "overall_progress_pct": 8,
   "current_milestone": "M1 - system can communicate with models",
   "current_stage": "Stage 1 - Basic AI interface",
-  "current_brick": "Session 2 (next)",
+  "current_brick": "Session 3 (next)",
   "build_protocol_adopted": true,
   "verification_level_current_brick": 3,
   "completed_bricks": [
@@ -35,9 +35,22 @@
       "tests_passing": 10,
       "commit": "3224fbf",
       "verification_level": 3
+    },
+    {
+      "id": "S2",
+      "title": "CLI entrypoint (routes through factory per D005)",
+      "files": [
+        "apps/cli/main.py",
+        "apps/__init__.py",
+        "apps/cli/__init__.py",
+        "tests/test_cli.py"
+      ],
+      "tests_passing": 3,
+      "commit": "PENDING",
+      "verification_level": 2
     }
   ],
-  "next_brick": "S2",
+  "next_brick": "S3",
   "blocked_bricks": [],
   "open_questions": [],
   "open_risks": [

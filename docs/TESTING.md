@@ -58,3 +58,16 @@ https://openrouter.ai/keys) and `ACTIVE_PROVIDER=openrouter`. This is the
 level-3 check for the OpenRouter path specifically — running it does not
 verify the Anthropic path, and vice versa. Both smoke tests are independent;
 neither is run by `pytest` or CI.
+
+## CLI tests (Session 2)
+
+`pytest -v` now runs 17 tests (14 prior + 3 CLI), all mocked. The CLI's own
+provider/settings are injected as function parameters (`provider_factory`,
+`settings_loader`) — same pattern as every provider test — so no env vars
+or network are touched by the automated suite.
+
+Manual end-to-end check (not part of pytest): with a real key in `.env`,
+```
+python apps/cli/main.py "say hello"
+```
+should print a real model response.
