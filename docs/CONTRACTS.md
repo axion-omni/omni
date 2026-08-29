@@ -73,7 +73,9 @@ ModelError
 ├── ModelRateLimitError       retryable — caller may back off and retry
 ├── ModelTimeoutError         retryable
 ├── ModelUnavailableError     retryable — provider down/overloaded
-└── ModelInvalidRequestError  NOT retryable — our request was malformed
+├── ModelInvalidRequestError  NOT retryable — our request was malformed
+└── ModelNotRegisteredError   NOT retryable — unknown logical model name
+                              (raised by the registry; added Session 3)
 ```
 
 **Agreement for future retry logic (Session 5+):** only `RateLimitError`,
@@ -105,17 +107,60 @@ def get_active_provider(settings: Settings) -> ModelProvider:
 ```
 
 **Agreement:** this is the only place that decides *which* `ModelProvider`
-implementation a caller gets. Nothing else should construct
-`AnthropicProvider` or `OpenRouterProvider` directly except tests and this
-function. Defaults to Anthropic — switching requires only
-`ACTIVE_PROVIDER=openrouter` in `.env`.
+implementation gets constructed from `Settings`. Nothing else should construct
+`AnthropicProvider` or `OpenRouterProvider` directly except tests, this
+function, and `registry.build_default_registry()` (which calls it). Defaults to
+Anthropic — switching requires only `ACTIVE_PROVIDER=openrouter` in `.env`.
 
-**Explicitly temporary:** this function has none of the capability-matching
-or cost-awareness the real Model Registry (Session 3) will have. When
-Session 3 lands, callers should migrate to the registry; this file is
-expected to shrink to a thin wrapper or be removed. Not a breaking change
-either way, since it returns the same `ModelProvider` type either function
-would.
+**Role after Session 3 (see D007):** narrowed from caller-facing to the
+registry's provider-construction primitive. Callers now resolve models through
+`ModelRegistry`, not by calling this directly. The function was retained (not
+deleted) so provider selection + key handling stay in one place; its signature
+and behavior are unchanged.
+
+## `ModelRegistry` (core/models/registry.py) — Session 3
+
+```python
+class ModelRegistry:
+    def register(self, logical_name: str, provider: ModelProvider, model_id: str) -> None: ...
+    def resolve(self, logical_name: str) -> tuple[ModelProvider, str]: ...
+    def capabilities(self, logical_name: str) -> ModelCapabilities: ...
+    def list_models(self) -> list[str]: ...
+    def __contains__(self, logical_name) -> bool: ...
+
+def build_default_registry(settings: Settings) -> ModelRegistry: ...
+def estimated_cost(capabilities: ModelCapabilities, response: ModelResponse) -> float: ...
+
+DEFAULT_LOGICAL_MODEL = "reasoning-strong"
+LOGICAL_MODEL_NAMES = ("reasoning-strong", "coding", "cheap-fast")
+```
+
+**Agreements:**
+- `resolve()` returns a `(provider, model_id)` pair. Callers pass `model_id`
+  straight into `provider.generate(prompt, model=model_id)`. Above this layer,
+  **no caller writes a concrete model string or a provider name** — they use a
+  logical name only. This is the lock-in control from Master Construction
+  Spec Part V/XXII, now enforced in code.
+- An unknown logical name raises **`ModelNotRegisteredError`** (a `ModelError`),
+  never a bare `KeyError`. One catch type for callers, same as every other
+  model-layer failure.
+- `capabilities(logical_name)` is **sourced from the provider**
+  (`ModelProvider.capabilities(model_id)`), not stored a second time in the
+  registry. The registry is where capability/cost data is *queried from*
+  (destination Section 9), not a duplicate source of truth.
+- `build_default_registry(settings)` reuses `factory.get_active_provider()`, so
+  `ACTIVE_PROVIDER` selection and key handling are not duplicated, and D004's
+  no-Anthropic-credit dev route is preserved. It registers the active provider
+  under every logical name today (one real model per provider); Session 4's
+  routing table is what makes the names diverge.
+- `estimated_cost()` is pure (no I/O): `tokens ÷ 1e6 × per-million rate`, summed
+  over input+output. It is the per-call building block for cost-to-date
+  reporting (destination Sections 9/13; Spec Part XIX); the running per-project
+  total is the event log's job later (Stage 16), not this function's.
+
+**Explicitly deferred:** task-type + `MODEL_POLICY` → logical-name routing is
+Session 4 (`core/models/routing.py`); retry + fallback is Session 5
+(`core/models/retry.py`). The registry is the seam both build on.
 
 ## `OpenRouterProvider` (core/models/providers/openrouter_provider.py)
 
@@ -127,7 +172,8 @@ OpenRouter rotate over time.
 
 ## Not yet defined (will be added here when built)
 
-- Full Model Registry with capability/cost-based routing — Session 3
+- Task-type + `MODEL_POLICY` routing table (`core.models.routing`) — Session 4
+- Retry + fallback wrapper (`core.models.retry`) — Session 5
 - Tool interface (`core.tools.Tool`) — Session ~9+
 - Agent contract (task/output shape every agent returns) — Session ~11+
 - Task graph node schema — Session ~13+

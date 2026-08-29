@@ -29,3 +29,11 @@ class ModelUnavailableError(ModelError):
 
 class ModelInvalidRequestError(ModelError):
     """Our request was malformed (bad schema, bad params, etc.)."""
+
+
+class ModelNotRegisteredError(ModelError):
+    """A requested logical model name is not in the Model Registry.
+
+    Raised by core.models.registry so callers catch one ModelError type
+    instead of a raw KeyError leaking up from the registry's lookup table.
+    NOT retryable — the fix is to register the name or ask for a known one."""

@@ -25,7 +25,7 @@ stages complete so it never drifts far from that source document.
 |---|---|---|
 | 1 | Model abstraction + Anthropic provider | ✅ Done — commit `c9925a1` |
 | 2 | CLI entrypoint + config hardening | ✅ Done |
-| 3 | Model registry (logical names → provider+model) | Planned |
+| 3 | Model registry (logical names → provider+model) | ⏳ Built, Level 2 — operator L3 pending |
 | 4 | Routing table + MODEL_POLICY | Planned |
 | 5 | Retry + fallback logic | Planned |
 

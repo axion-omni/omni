@@ -8,10 +8,14 @@ capability-matching, cost-awareness, or fallback logic. It does exactly
 one thing: read `Settings.active_provider` and hand back the matching
 ModelProvider instance.
 
-Session 3 will absorb this function's job into the real registry. When
-that happens, this file either gets deleted or becomes a thin wrapper
-around the registry — logged as a forward-looking note, not a decision
-that needs to be re-litigated later (see DECISIONS.md D004).
+Session 3 outcome (see DECISIONS.md D007): the Model Registry
+(core/models/registry.py) is now the caller-facing resolution layer — the
+CLI and every future consumer go through it, not through this function.
+This function was NOT deleted; it was retained as the registry's single
+provider-construction primitive. `build_default_registry()` calls it, so
+ACTIVE_PROVIDER selection and API-key handling still live in exactly one
+place. Its role narrowed from "what callers use" to "how the registry
+builds the active provider" — no behavior change, no signature change.
 """
 
 from __future__ import annotations

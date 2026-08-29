@@ -61,13 +61,29 @@ neither is run by `pytest` or CI.
 
 ## CLI tests (Session 2)
 
-`pytest -v` now runs 17 tests (14 prior + 3 CLI), all mocked. The CLI's own
-provider/settings are injected as function parameters (`provider_factory`,
-`settings_loader`) — same pattern as every provider test — so no env vars
-or network are touched by the automated suite.
+`pytest -v` runs the CLI tests with mocked injection (`registry_builder`,
+`settings_loader`) — same pattern as every provider test — so no env vars or
+network are touched by the automated suite.
 
 Manual end-to-end check (not part of pytest): with a real key in `.env`,
 ```
 python apps/cli/main.py "say hello"
 ```
 should print a real model response.
+
+## Model registry tests (Session 3)
+
+`pytest -v` now runs **31 tests** (17 prior + 11 registry + 3 net-new CLI),
+all mocked — no network or API key required. `tests/test_registry.py` proves:
+a known logical name resolves to the right `(provider, model_id)`; an unknown
+name raises `ModelNotRegisteredError` (a `ModelError`, **not** a `KeyError`);
+`capabilities()` is sourced from the provider for the resolved model;
+`estimated_cost()` arithmetic; and `build_default_registry()` honors
+`ACTIVE_PROVIDER` (Anthropic default, OpenRouter switch, fail-fast on unknown).
+
+Manual end-to-end check (not part of pytest): with a real key in `.env`,
+```
+python apps/cli/main.py "say hello" --model reasoning-strong
+```
+should print a real model response, tagged with the resolved provider/model.
+This is the **Level-3** check for Session 3.

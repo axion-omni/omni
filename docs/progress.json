@@ -1,10 +1,10 @@
 {
-  "overall_progress_pct": 8,
+  "overall_progress_pct": 11,
   "current_milestone": "M1 - system can communicate with models",
-  "current_stage": "Stage 1 - Basic AI interface",
-  "current_brick": "Session 3 (next)",
+  "current_stage": "Stage 2 - Model abstraction & routing",
+  "current_brick": "Session 4 (next)",
   "build_protocol_adopted": true,
-  "verification_level_current_brick": 3,
+  "verification_level_current_brick": 2,
   "completed_bricks": [
     {
       "id": "S1",
@@ -48,16 +48,33 @@
       "tests_passing": 3,
       "commit": "5431770",
       "verification_level": 2
+    },
+    {
+      "id": "S3",
+      "title": "Model registry (logical names -> provider+model)",
+      "files": [
+        "core/models/registry.py",
+        "core/models/exceptions.py (extended: ModelNotRegisteredError)",
+        "core/models/factory.py (doc note only; role narrowed per D007)",
+        "apps/cli/main.py (extended: --model flag, resolves via registry)",
+        "tests/test_registry.py",
+        "tests/test_cli.py (updated to the registry injection seam)"
+      ],
+      "tests_passing": 14,
+      "total_tests_after": 31,
+      "commit": null,
+      "verification_level": 2
     }
   ],
-  "next_brick": "S3",
+  "next_brick": "S4",
   "blocked_bricks": [],
   "open_questions": [],
   "open_risks": [
-    "OpenRouter free-tier model slugs rotate; default may need updating via OPENROUTER_MODEL env var over time"
+    "OpenRouter free-tier model slugs rotate; default may need updating via OPENROUTER_MODEL env var over time",
+    "S3 seeds every logical name to the active provider's single default model; real per-name differentiation lands with Session 4's routing table"
   ],
   "decisions_required": [],
   "failed_experiments": [],
   "destination_doc": "PERSONAL_AI_OS_MASTER_ARCHITECTURE.md (see D006)",
-  "handoff_note": "Repo handed off for continuation by a Claude Opus 5 agent at this point. Next brick: Session 3 (model registry), which also satisfies part of Milestone B in the new destination doc."
+  "handoff_note": "Session 3 (model registry) built and Level-2 verified (31 tests pass, no network). Operator Level-3 pending for Sessions 2 and 3: run `pytest -v` and `python apps/cli/main.py \"say hello\" --model reasoning-strong` with a real key. Next brick: Session 4 (routing table + MODEL_POLICY), which sits on top of the registry. Phase-by-phase route and test gates are in docs/BUILD_PLAN.md."
 }

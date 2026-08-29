@@ -84,3 +84,37 @@ build protocol itself) carries forward unchanged. This is an extension of
 scope, not a redesign of what's built.
 **Reversible:** The cloud/phone layers are additive on top of `core/` —
 if this direction changed again, `core/` would not need to be rewritten.
+
+### D007 — Model Registry is the caller-facing layer; the factory is retained as its construction primitive
+**Date:** Session 3
+**Decision:** Built `core/models/registry.py` (`ModelRegistry`, `resolve() ->
+(ModelProvider, model_id)`, provider-sourced `capabilities()`,
+`build_default_registry()`, pure `estimated_cost()`), per Master Construction
+Spec Part V / Part VII Session 3. Callers (starting with the CLI) now resolve
+models through the registry using **logical names** (`reasoning-strong`,
+`coding`, `cheap-fast`), never a raw provider/model string.
+**On "replacing the temporary factory.py":** the factory was **not deleted**.
+`build_default_registry()` calls `factory.get_active_provider()`, so
+`ACTIVE_PROVIDER` selection + key handling live in exactly one place and D004's
+no-Anthropic-credit dev route is preserved untouched. The factory's role
+narrowed from "what callers use" to "how the registry constructs the active
+provider." Deleting it would have forced that selection logic to be duplicated
+inside the registry for no benefit and would have churned `test_factory.py`.
+This realizes CONTRACTS.md's predicted "migrate callers to the registry"
+without a rewrite of working, tested code.
+**Scope kept small (Part VII, Session 3):** capabilities are sourced from
+`ModelProvider.capabilities()`, not duplicated in a second table. Only one
+verified model exists per provider today, so every logical name resolves to the
+active provider's default model; the task-type + `MODEL_POLICY` routing table
+that makes them diverge is **Session 4**, and retry/fallback is **Session 5** —
+both deferred deliberately, not forgotten.
+**On the destination doc's "queryable for cost" addition (Section 9):**
+satisfied at the per-call level now via `estimated_cost()` +
+`ModelCapabilities.cost_per_million_*` (justified from Stage 2 onward by Spec
+Part XIX). The persistent per-project cost-to-date total is deferred to the
+event log / Observability (Stage 16), because no persistence layer exists yet —
+building a ledger now would be speculative.
+**New error type:** `ModelNotRegisteredError(ModelError)` — an unknown logical
+name is a clean, catchable model-layer error, not a `KeyError` leaking upward.
+**Reversible:** Yes — the registry is additive; the factory contract is
+unchanged, so reverting to calling the factory directly would be mechanical.
