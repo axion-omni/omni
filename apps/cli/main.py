@@ -39,6 +39,11 @@ def _parse_args(argv: list[str]) -> tuple[str | None, str]:
     args = argv[1:]
     logical_model = DEFAULT_LOGICAL_MODEL
 
+    if args.count("--model") > 1:
+        # Ambiguous — refuse rather than silently pick one and let a stray
+        # "--model" token fall through into the prompt slot.
+        return None, logical_model
+
     if "--model" in args:
         i = args.index("--model")
         if i + 1 >= len(args):
@@ -46,7 +51,9 @@ def _parse_args(argv: list[str]) -> tuple[str | None, str]:
         logical_model = args[i + 1]
         del args[i : i + 2]
 
-    prompt = args[0] if args and args[0].strip() else None
+    # A surviving "--model" (e.g. the prompt was literally "--model") is not a
+    # valid prompt — take the usage path instead of sending it to the model.
+    prompt = args[0] if args and args[0].strip() and args[0] != "--model" else None
     return prompt, logical_model
 
 

@@ -151,3 +151,34 @@ def test_run_handles_unknown_model_name_cleanly(capsys):
     assert exit_code == 1
     assert "ModelNotRegisteredError" in captured.err
     assert "Traceback" not in captured.err
+
+
+def test_run_rejects_duplicate_model_flag(capsys):
+    # A repeated --model is ambiguous: show usage, never send "--model" as the
+    # prompt or silently pick one flag (regression for the review finding).
+    registry = _FakeRegistry(_FakeProvider(response=_response()))
+    exit_code = run(
+        ["main.py", "--model", "reasoning-strong", "--model", "cheap-fast", "hello"],
+        registry_builder=lambda settings: registry,
+        settings_loader=_fake_settings,
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "Usage:" in captured.err
+    assert registry.resolved == []  # nothing was resolved/generated
+
+
+def test_run_rejects_bare_model_token_as_prompt(capsys):
+    # `--model` with no value must not be treated as a prompt.
+    registry = _FakeRegistry(_FakeProvider(response=_response()))
+    exit_code = run(
+        ["main.py", "--model"],
+        registry_builder=lambda settings: registry,
+        settings_loader=_fake_settings,
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "Usage:" in captured.err
+    assert registry.resolved == []
