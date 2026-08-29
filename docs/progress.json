@@ -1,8 +1,8 @@
 {
-  "overall_progress_pct": 11,
+  "overall_progress_pct": 14,
   "current_milestone": "M1 - system can communicate with models",
   "current_stage": "Stage 2 - Model abstraction & routing",
-  "current_brick": "Session 4 (next)",
+  "current_brick": "Session 5 (next)",
   "build_protocol_adopted": true,
   "verification_level_current_brick": 2,
   "completed_bricks": [
@@ -64,17 +64,42 @@
       "total_tests_after": 31,
       "commit": "4467ceb",
       "verification_level": 2
+    },
+    {
+      "id": "S3-fix",
+      "title": "CLI review fix: reject duplicate/leftover --model",
+      "files": [
+        "apps/cli/main.py",
+        "tests/test_cli.py (2 regression tests)"
+      ],
+      "tests_passing": 2,
+      "total_tests_after": 33,
+      "commit": "6c14d4b",
+      "verification_level": 2
+    },
+    {
+      "id": "S4",
+      "title": "Routing table + MODEL_POLICY (task_type + policy -> logical name)",
+      "files": [
+        "core/models/routing.py",
+        "apps/cli/main.py (routes by MODEL_POLICY when --model omitted; selection in stderr tag)",
+        "tests/test_routing.py"
+      ],
+      "tests_passing": 6,
+      "total_tests_after": 39,
+      "commit": null,
+      "verification_level": 2
     }
   ],
-  "next_brick": "S4",
+  "next_brick": "S5",
   "blocked_bricks": [],
   "open_questions": [],
   "open_risks": [
     "OpenRouter free-tier model slugs rotate; default may need updating via OPENROUTER_MODEL env var over time",
-    "S3 seeds every logical name to the active provider's single default model; real per-name differentiation lands with Session 4's routing table"
+    "Routing (S4) selects logical names but every name resolves to one concrete model per provider (D007); physical per-tier model differentiation needs a second registered model"
   ],
   "decisions_required": [],
   "failed_experiments": [],
   "destination_doc": "PERSONAL_AI_OS_MASTER_ARCHITECTURE.md (see D006)",
-  "handoff_note": "Session 3 (model registry) built and Level-2 verified (31 tests pass, no network). Operator Level-3 pending for Sessions 2 and 3: run `pytest -v` and `python apps/cli/main.py \"say hello\" --model reasoning-strong` with a real key. Next brick: Session 4 (routing table + MODEL_POLICY), which sits on top of the registry. Phase-by-phase route and test gates are in docs/BUILD_PLAN.md."
+  "handoff_note": "Sessions 3 (registry) and 4 (routing) built and Level-2 verified (39 tests pass, no network). Post-S3 review fix committed (6c14d4b: duplicate --model handling). Operator Level-3 pending for Sessions 2-4: run `pytest -v` and, with a real key, the same prompt under MODEL_POLICY=cheap vs =quality to see the routing selection change. Next brick: Session 5 (retry + fallback), which completes construction-spec Milestone 1. Phase-by-phase route and test gates are in docs/BUILD_PLAN.md."
 }

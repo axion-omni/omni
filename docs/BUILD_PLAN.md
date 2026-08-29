@@ -111,14 +111,20 @@ Level-3 for Session 2 is the one open item and is also the Session-3 gate-in.
   green. **L3 (pending operator):** run `pytest -v` and
   `python apps/cli/main.py "say hello" --model reasoning-strong` with a real
   key. *(Spec: Part VII, Session 3; decision D007.)*
-- `[ ]` **Session 4 — Routing table + `MODEL_POLICY`.**  **NEXT**
-  Builds: `core/models/routing.py` — `route(task_type, policy) → logical_name`
-  over a small rule table, plus the routing-decision log line.
-  **Test gate (L2):** `pytest tests/test_routing.py` — the same task type
-  under two policies resolves to two different logical names. **L3:** operator
-  flips `MODEL_POLICY` in `.env` and sees an identical prompt provably handled
-  by a different model (via the log line). *(Spec: Part VII, Session 4.)*
-- `[ ]` **Session 5 — Retry + fallback.**
+- `[~]` **Session 4 — Routing table + `MODEL_POLICY`.**  *Built — Level 2*
+  Built: `core/models/routing.py` — `route(task_type, policy) → logical_name`
+  over a small rule table (`general` fallback row + `code`), plus the
+  routing-decision log line; CLI routes by `MODEL_POLICY` when `--model` is
+  omitted and prints the selection in its stderr tag.
+  **Test gate (L2): ✅ `pytest -v` → 39 passed** — the same task type under two
+  policies resolves to two different logical names (`cheap`→`cheap-fast`,
+  `quality`→`reasoning-strong`); every policy routes to a registered name;
+  unknown task/policy fall back safely; the decision is logged. **L3 (pending
+  operator):** with a real key, run the same prompt under `MODEL_POLICY=cheap`
+  then `=quality` and see the printed selection / log line change. *(Spec: Part
+  VII, Session 4. Note per D007: both resolve to one concrete model until a
+  second is registered — the routing selection is what changes.)*
+- `[ ]` **Session 5 — Retry + fallback.**  **NEXT**
   Builds: `core/models/retry.py` — capped exponential backoff for retryable
   errors only (`RateLimit`/`Timeout`/`Unavailable`), one fallback model.
   **Test gate (L2):** `pytest tests/test_retry.py` — fails-twice-then-succeeds
@@ -282,9 +288,9 @@ interfaces (web dashboard, native app, full voice).
 
 ## Where we are right now
 
-- **Done & Level-3:** Sessions 1, 1b. **Built, Level-2:** Sessions 2, 3.
-- **Baseline:** `pytest -v` → **31 passed** (no network/keys).
-- **NEXT brick:** **Session 4 — Routing table + `MODEL_POLICY`** (Milestone B).
-  Gate-in requires the operator's Level-3 run of Sessions 2–3 (`pytest -v` +
-  `python apps/cli/main.py "say hello" --model reasoning-strong` with a real
-  key).
+- **Done & Level-3:** Sessions 1, 1b. **Built, Level-2:** Sessions 2, 3, 4.
+- **Baseline:** `pytest -v` → **39 passed** (no network/keys).
+- **NEXT brick:** **Session 5 — Retry + fallback** (Milestone B, completes
+  construction-spec Milestone 1). Gate-in requires the operator's Level-3 run
+  of Sessions 2–4 (`pytest -v` + a real-key CLI run under two `MODEL_POLICY`
+  values to see the routing selection change).

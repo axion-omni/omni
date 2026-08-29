@@ -158,9 +158,34 @@ LOGICAL_MODEL_NAMES = ("reasoning-strong", "coding", "cheap-fast")
   reporting (destination Sections 9/13; Spec Part XIX); the running per-project
   total is the event log's job later (Stage 16), not this function's.
 
-**Explicitly deferred:** task-type + `MODEL_POLICY` → logical-name routing is
-Session 4 (`core/models/routing.py`); retry + fallback is Session 5
-(`core/models/retry.py`). The registry is the seam both build on.
+**Explicitly deferred:** retry + fallback is Session 5
+(`core/models/retry.py`). The registry is the seam it builds on.
+
+## `route()` (core/models/routing.py) — Session 4
+
+```python
+POLICIES = ("free", "cheap", "balanced", "quality", "maximum")
+DEFAULT_TASK_TYPE = "general"
+
+def route(task_type: str, policy: str) -> str: ...   # -> a logical model name
+```
+
+**Agreements:**
+- `route()` maps a `(task_type, policy)` pair to a **logical model name** that
+  the registry then resolves. Callers above this layer pass a task type + the
+  `MODEL_POLICY` from `Settings.model_policy` — never a model or provider name.
+- Every name the routing table can emit is a registered `LOGICAL_MODEL_NAME`
+  (validated at import; a bad table raises `ValueError` at import, not a
+  runtime `ModelNotRegisteredError`).
+- `route()` **never raises**: an unknown `task_type` falls back to the
+  `general` row, an unknown `policy` falls back to `DEFAULT_LOGICAL_MODEL`.
+- Every call logs the decision to the `core.models.routing` logger
+  (`routing decision: task_type=… policy=… -> logical_model=…`). That log line
+  is the observability hook (Spec Part XVIII) and the level-3 proof that
+  flipping `MODEL_POLICY` changed the selection.
+- Today all logical names resolve to one concrete model per provider (D007), so
+  routing changes the logical selection + log line but not yet the concrete
+  model; physical differentiation lands when a second model is registered.
 
 ## `OpenRouterProvider` (core/models/providers/openrouter_provider.py)
 
@@ -172,7 +197,6 @@ OpenRouter rotate over time.
 
 ## Not yet defined (will be added here when built)
 
-- Task-type + `MODEL_POLICY` routing table (`core.models.routing`) — Session 4
 - Retry + fallback wrapper (`core.models.retry`) — Session 5
 - Tool interface (`core.tools.Tool`) — Session ~9+
 - Agent contract (task/output shape every agent returns) — Session ~11+

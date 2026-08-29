@@ -26,6 +26,9 @@ core/
     │                                   "cheap-fast") -> (provider, model_id).
     │                                   Caller-facing resolution layer + a pure
     │                                   estimated_cost() helper.
+    ├── routing.py                     Policy routing (Session 4). route(
+    │                                   task_type, MODEL_POLICY) -> logical name
+    │                                   the registry resolves; logs the decision.
     └── providers/
         ├── anthropic_provider.py      Only file that imports the `anthropic`
         │                               SDK. Implements ModelProvider.
@@ -47,24 +50,27 @@ apps/
 ```
 python apps/cli/main.py "<prompt>" [--model <logical-name>]
     → core.config.load_settings() → Settings
+    → (if no --model) core.models.routing.route("general", settings.model_policy)
+        → logical name   [logs the routing decision]
     → core.models.registry.build_default_registry(settings) → ModelRegistry
         (internally: core.models.factory.get_active_provider(settings))
     → registry.resolve(logical_name) → (ModelProvider, model_id)
     → provider.generate(prompt, model=model_id) → ModelResponse
-    → printed to stdout (text) / stderr (usage + errors)
+    → printed to stdout (text) / stderr (usage + selection + errors)
 ```
 
-There is no capability-based *routing table* yet (task-type + MODEL_POLICY →
-logical name is Session 4), no retry/fallback (Session 5), no memory layer, no
-tools, and no agents yet — those are Sessions 4+ (see ROADMAP.md and
-BUILD_PLAN.md). The registry resolves logical names to a concrete
-(provider, model_id) pair and exposes provider-sourced capabilities + a
-per-call `estimated_cost()` helper; today every logical name resolves to the
-active provider's default model (one verified model per provider), which
-Session 4's routing layer differentiates once more models are registered.
+There is no retry/fallback yet (Session 5), no memory layer, no tools, and no
+agents yet — those are Sessions 5+ (see ROADMAP.md and BUILD_PLAN.md). Routing
+(Session 4) maps a (task_type, MODEL_POLICY) pair to a logical name and logs
+the decision; the registry resolves that name to a concrete (provider,
+model_id) and exposes provider-sourced capabilities + a per-call
+`estimated_cost()` helper. Today every logical name resolves to the active
+provider's single default model (D007), so flipping `MODEL_POLICY` changes the
+logical selection and the logged decision for an identical prompt; mapping the
+tiers to physically distinct models lands once a second model is registered.
 `core/models/factory.py` remains the single place that selects a provider from
-`ACTIVE_PROVIDER`; the registry now sits on top of it (D007). Nothing in this
-repo should be assumed to exist beyond what's listed above without checking.
+`ACTIVE_PROVIDER`; the registry sits on top of it (D007). Nothing in this repo
+should be assumed to exist beyond what's listed above without checking.
 
 ## Rule enforced by this structure
 
@@ -73,6 +79,6 @@ This is what lets a second provider be added later as a new file + a
 registry entry (once the registry exists), not a rewrite of callers.
 
 ## Last verified against actual code
-Commit `13de664` + Session 3 (registry). `pytest -v` → 31 passed in the
+Commit `6c14d4b` + Session 4 (routing). `pytest -v` → 39 passed in the
 assistant sandbox (Level 2). If this file and the actual `core/` tree
 disagree, the code wins — flag it, don't silently trust this doc.

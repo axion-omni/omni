@@ -87,3 +87,25 @@ python apps/cli/main.py "say hello" --model reasoning-strong
 ```
 should print a real model response, tagged with the resolved provider/model.
 This is the **Level-3** check for Session 3.
+
+## Routing tests (Session 4)
+
+`pytest -v` now runs **39 tests** (33 prior + 6 routing). `tests/test_routing.py`
+proves the Session 4 acceptance criterion — the same task type under two
+policies routes to two different logical names (`cheap` → `cheap-fast`,
+`quality` → `reasoning-strong`) — plus: every policy routes to a registered
+logical name; unknown task_type falls back to the `general` row; unknown policy
+falls back to the default; and the routing decision is logged. All mocked, no
+network or key.
+
+Manual end-to-end check (not part of pytest): the routing decision is logged
+and printed in the CLI's stderr tag. With a real key in `.env`, flip the policy
+and see the selection change for an identical prompt:
+```
+MODEL_POLICY=cheap    python apps/cli/main.py "say hello"
+MODEL_POLICY=quality  python apps/cli/main.py "say hello"
+```
+The `[... — policy=<policy> -> <logical>]` tag (and the `core.models.routing`
+log line) is the **Level-3** proof for Session 4. Note: until a second concrete
+model is registered (D007), both resolve to the same provider model — the
+*routing selection* is what visibly changes.
