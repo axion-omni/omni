@@ -4,7 +4,7 @@
   "current_stage": "Stage 1 - Basic AI interface",
   "current_brick": "Session 2 (next)",
   "build_protocol_adopted": true,
-  "verification_level_current_brick": 2,
+  "verification_level_current_brick": 3,
   "completed_bricks": [
     {
       "id": "S1",
@@ -19,7 +19,7 @@
       ],
       "tests_passing": 4,
       "commit": "5def786",
-      "verification_level": 2
+      "verification_level": 3
     },
     {
       "id": "S1b",
@@ -34,7 +34,7 @@
       ],
       "tests_passing": 10,
       "commit": "3224fbf",
-      "verification_level": 2
+      "verification_level": 3
     }
   ],
   "next_brick": "S2",

@@ -3,43 +3,34 @@
 Machine-readable state: `docs/progress.json` (kept in sync with this file).
 
 ## Overall
-- **Current milestone:** Milestone 1 — "The system can communicate with models" (in progress)
-- **Current stage:** Stage 1 — Basic AI interface
-- **Current brick:** Out-of-sequence addition complete (OpenRouter provider)
-  → Session 2 (CLI entrypoint) still next
-- **Build protocol:** non-negotiable build protocol in effect — docs are
-  source of truth, Understand → Inspect → Plan → Implement → Test →
-  Integrate → Verify → Document → Commit every session.
+- **Current milestone:** Milestone 1 — "The system can communicate with models" — **COMPLETE**, pending Sessions 3-5 below (registry/routing/retry) which are still part of M1's original scope
+- **Current stage:** Stage 1 — Basic AI interface (done) → moving toward Stage 2
+- **Current brick:** Session 2 (CLI entrypoint) — next, spec below
+- **Build protocol:** non-negotiable build protocol in effect.
 
 ## Completed
 - Repository initialized
 - Model interface (`ModelProvider`, `ModelResponse`, `ModelCapabilities`)
-- Anthropic provider implementation (untouched since Session 1)
-- **OpenRouter provider implementation** (new — dev/testing path while no
-  Anthropic credits available)
-- **Minimal provider factory/switch** (`core/models/factory.py` — temporary,
-  see DECISIONS.md D004)
-- Unit tests: 14 total (4 Anthropic + 3 factory + 7 OpenRouter), all passing,
-  all mocked (verification level 2)
-- Smoke test scripts for both providers written (neither yet run against a
-  real key/machine — verification level 3 still pending for both)
-- All six standing docs current as of this update
-
-## In progress
-- Verification level 3 pending for both providers — operator has not yet
-  confirmed `pytest -v` or either smoke test on their own machine.
+- Anthropic provider implementation
+- OpenRouter provider implementation (dev/testing path, D004)
+- Minimal provider factory/switch (`core/models/factory.py`, temporary — D004)
+- 14 unit tests, all passing
+- Both smoke test scripts written
+- **Verification level 3 confirmed by operator** — tested and validated on
+  their own machine, own credentials. This is the first brick to reach
+  level 3.
+- All six standing docs current
 
 ## Blocked
-- None. (OpenRouter path exists specifically because Anthropic credits are
-  currently unavailable — this is noted, not a blocker for continued work.)
+- None.
 
 ## Decisions pending
 - None new since D004.
 
 ## Next
-- Confirm this addition at verification level 3 (operator's machine, real
-  OpenRouter key — free, no card needed).
-- Then: Session 2 — CLI entrypoint + config hardening (ROADMAP.md).
+- Session 2 — CLI entrypoint + config hardening, updated to route through
+  `core.models.factory.get_active_provider()` rather than hardcoding
+  Anthropic, so the CLI respects whichever provider is currently active.
 
 ## Last verified
-Level 2 only (assistant's sandbox, all 14 tests). Level 3 not yet confirmed.
+**Level 3 — confirmed by operator.**
