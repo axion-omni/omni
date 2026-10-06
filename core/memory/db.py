@@ -14,11 +14,17 @@ AnthropicProvider's SDK import — so the unit tests run with the driver absent
 and no live database, and `pytest` stays green with zero infrastructure. The one
 live check (`ping`) is exercised by a test that SKIPS when DATABASE_URL is unset.
 
-No schema here. Tables and the Constitution repository arrive in Sessions 7-8.
+Session 8 addendum: driver error messages are redacted before translation. A
+failed connection string commonly contains `:password@host`; leaking that into
+a traceback or a log is a security bug, not just an aesthetic one. All driver
+errors pass through `_redact()` on their way into DatabaseConnectionError.
+
+No schema here. Tables and the Constitution repository live in Sessions 7-8.
 """
 
 from __future__ import annotations
 
+import re
 from typing import Any, Callable, Optional
 
 from core.config import Settings
@@ -26,6 +32,15 @@ from core.memory.exceptions import (
     DatabaseConnectionError,
     DatabaseNotConfiguredError,
 )
+
+# Matches `:something@` in a URL — the password segment. Applied only to error
+# messages before they leave this module, never to real connection strings.
+_CREDENTIAL_RE = re.compile(r":[^:@/\s]+@")
+
+
+def _redact(message: str) -> str:
+    """Replace URL password segments with `:***@`. Never log the raw form."""
+    return _CREDENTIAL_RE.sub(":***@", message)
 
 
 def _default_connector(database_url: str) -> Any:
@@ -47,7 +62,8 @@ def connect(
     psycopg connection — the same pattern as the model providers' client
     injection. Raises:
       - DatabaseNotConfiguredError if DATABASE_URL is empty (fail clearly).
-      - DatabaseConnectionError if the driver fails to connect.
+      - DatabaseConnectionError if the driver fails to connect (message is
+        redacted — see _redact()).
     """
     if not settings.database_url:
         raise DatabaseNotConfiguredError(
@@ -61,7 +77,7 @@ def connect(
     except DatabaseNotConfiguredError:
         raise
     except Exception as exc:  # translate any driver error into our hierarchy
-        raise DatabaseConnectionError(str(exc)) from exc
+        raise DatabaseConnectionError(_redact(str(exc))) from exc
 
 
 def ping(
@@ -84,7 +100,7 @@ def ping(
     except (DatabaseNotConfiguredError, DatabaseConnectionError):
         raise
     except Exception as exc:
-        raise DatabaseConnectionError(str(exc)) from exc
+        raise DatabaseConnectionError(_redact(str(exc))) from exc
     finally:
         close = getattr(conn, "close", None)
         if callable(close):
