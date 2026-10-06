@@ -232,3 +232,42 @@ the database — that is Session 9.
 **Reversible:** the repository pattern confines a backend swap to
 `core/memory/`; the CLI and any future consumer depend only on the five
 methods and the exception, not on Postgres.
+
+### D012 — CLI gains a `constitution` subcommand family; thin wrappers, JSON-typed `--set`, dispatch by argv[1]
+**Date:** Session 9 (Milestone C, closing brick)
+**Decision:** `apps/cli/main.py` gains three subcommands — `constitution
+create` / `show` / `amend` — that are thin wrappers over
+`ConstitutionRepository` (Session 8). This is the CLI's first path to
+persistent state, and its existence is what closes Milestone C: a
+Constitution created in one process is read back in another.
+**Dispatch rule:** `argv[1] == "constitution"` routes to the constitution
+handler; anything else routes to the existing chat path **unchanged**. This
+preserves every Session 2–5 chat test byte-for-byte and keeps the two
+surfaces independent.
+**Why `--set KEY=VALUE` instead of per-field flags:** the Constitution has
+13 fields (12 mutable). Per-field flags would mean 12 argparse definitions
+that must be updated whenever the model changes. One repeatable
+`--set KEY=VALUE`, with JSON-typed values, matches the repository's
+`**field_updates` shape directly, is future-proof, and requires no CLI
+change when a field is added.
+**Why JSON-typed values:** `--set success_criteria='["a","b"]'` works
+because the value is parsed as JSON when valid; a plain string still works
+because non-JSON values fall through as strings. This mirrors how the
+repository validates field types (Pydantic), so CLI-level typing and
+repository-level typing agree.
+**Why argparse for the constitution tree but not the chat path:** the chat
+path's hand-parse is load-bearing for a clean int-return contract that
+existing tests depend on (and it refuses duplicate `--model` gracefully).
+argparse would exit the process on bad input. The constitution subcommands
+have real flags and benefit from argparse's error messages; where argparse
+would exit, `_run_constitution` catches `SystemExit` and returns 1 instead.
+**Error handling unchanged in spirit:** `MemoryError` and `ValueError` are
+caught and printed as one clean line; no traceback reaches the user. Same
+discipline as the chat path's `ModelError` handling.
+**Output conventions:** `create` prints only the project_id (pipeable);
+`amend` prints only the new version number; `show` prints a human-readable
+block with lists as compact JSON. A `--json` flag for machine output is
+deferred until something needs it.
+**Reversible:** the entire subcommand family is additive. Removing it means
+reverting `run()` to its single-handler form and deleting one test file;
+no other module changes.

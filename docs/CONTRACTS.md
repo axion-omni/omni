@@ -298,6 +298,45 @@ class ConstitutionRepository:
     def history(self, project_id: str) -> list[tuple[int, datetime]]: ...
     ```
 
+## CLI `constitution` subcommands (apps/cli/main.py) — Session 9
+python apps/cli/main.py constitution create <name> [--mission TEXT] [--purpose TEXT] [--desired-outcome TEXT]
+python apps/cli/main.py constitution show <project_id>
+python apps/cli/main.py constitution amend <project_id> --change TEXT [--set KEY=VALUE]...
+
+text
+
+**Agreements:**
+- **Dispatch:** `argv[1] == "constitution"` routes to the constitution handler;
+  anything else routes to the chat handler, unchanged (Sessions 2–5). Existing
+  chat tests must stay green.
+- **Thin wrappers only.** Handlers parse argv, call exactly one repository
+  method, format the result. No validation, business rules, or storage logic
+  lives in the CLI — those belong to the repository (D003).
+- **Output conventions:**
+  - `create` prints **only** the generated `project_id` (uuid string) to
+    stdout, so it is pipeable: `PID=$(python apps/cli/main.py constitution
+    create "X")`.
+  - `show` prints a human-readable block: `project_id`, `version`, then each
+    Constitution field on its own line. List fields render as compact JSON
+    (single line).
+  - `amend` prints **only** the new version number to stdout.
+- **`--set KEY=VALUE` is repeatable and value-typed.** VALUE is parsed as
+  JSON when valid (so `["a","b"]` is a list, `123` is an int, `true` is a
+  bool); otherwise it is a plain string. Malformed pairs (no `=`) raise a
+  clean error — never a silent no-op.
+- **Error handling matches the chat path.** `MemoryError` (base) is caught
+  and printed as one clean line (`Error (ConstitutionNotFoundError): ...`),
+  exit code 1, no traceback. `ValueError` from `--set` parsing is similarly
+  caught. Anything else is a bug and propagates.
+- **Injection:** `run()` accepts an optional `repo_builder` parameter
+  (default: constructs a real `ConstitutionRepository(settings)`) — same
+  pattern as the existing `registry_builder` / `settings_loader`. Tests
+  inject a fake; production uses the default.
+- **argparse** is used for the constitution subcommand tree only. The chat
+  path keeps its hand-parse (see `_parse_chat_args` docstring for why).
+
+
+
 ## Not yet defined (will be added here when built)
 
 - Constitution repository create/read/append (`core.memory.constitution`) — Session 8

@@ -55,6 +55,14 @@ Machine-readable state: `docs/progress.json` (kept in sync with this file).
   no longer leak URL passwords into tracebacks. Level 3 — operator verified
   against a live Supabase Postgres: 76 passed, 0 skipped. Commit `8610b57`.
 - 76 tests passing, 0 skipped — Level 3, on the operator's machine.
+-Session 9 — CLI `constitution` subcommands (`apps/cli/main.py`):
+  `create` / `show` / `amend`, thin wrappers over `ConstitutionRepository`.
+  Dispatch: `argv[1] == "constitution"` routes to the constitution handler;
+  anything else routes to the chat path unchanged. `--set KEY=VALUE`
+  repeatable, JSON-typed values. Errors caught (`MemoryError`, `ValueError`)
+  and printed as one clean line. **Level 3 — operator verified: a
+  Constitution created via the CLI survives a process boundary (run #1
+  creates, run #2 reads back). Milestone C closed.**
 
 ## In progress
 - None. Session 8 complete; ready for Session 9.
