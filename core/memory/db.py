@@ -14,33 +14,22 @@ AnthropicProvider's SDK import — so the unit tests run with the driver absent
 and no live database, and `pytest` stays green with zero infrastructure. The one
 live check (`ping`) is exercised by a test that SKIPS when DATABASE_URL is unset.
 
-Session 8 addendum: driver error messages are redacted before translation. A
-failed connection string commonly contains `:password@host`; leaking that into
-a traceback or a log is a security bug, not just an aesthetic one. All driver
-errors pass through `_redact()` on their way into DatabaseConnectionError.
-
-No schema here. Tables and the Constitution repository live in Sessions 7-8.
+Credential safety (post-S8 incident, D013): every driver error message is
+redacted before it becomes a DatabaseConnectionError, AND the original
+exception's args are redacted in place so the chained `__cause__` traceback
+cannot re-leak the URL. The redaction logic lives in core.config so Settings
+and the db seam share one source of truth.
 """
 
 from __future__ import annotations
 
-import re
 from typing import Any, Callable, Optional
 
-from core.config import Settings
+from core.config import Settings, redact_credentials
 from core.memory.exceptions import (
     DatabaseConnectionError,
     DatabaseNotConfiguredError,
 )
-
-# Matches `:something@` in a URL — the password segment. Applied only to error
-# messages before they leave this module, never to real connection strings.
-_CREDENTIAL_RE = re.compile(r":[^:@/\s]+@")
-
-
-def _redact(message: str) -> str:
-    """Replace URL password segments with `:***@`. Never log the raw form."""
-    return _CREDENTIAL_RE.sub(":***@", message)
 
 
 def _default_connector(database_url: str) -> Any:
@@ -49,6 +38,21 @@ def _default_connector(database_url: str) -> Any:
     import psycopg  # noqa: PLC0415 — intentional lazy import, see module docstring
 
     return psycopg.connect(database_url)
+
+
+def _sanitize(exc: BaseException) -> None:
+    """Best-effort: redact the exception's own message in place so any
+    chained traceback (via `raise ... from exc`) prints a redacted version.
+    Some exceptions don't allow args mutation; we never fail because of that.
+    """
+    try:
+        msg = str(exc)
+        redacted = redact_credentials(msg)
+        if redacted != msg:
+            exc.args = (redacted,)
+    except Exception:
+        # Never let a sanitization failure mask the real error.
+        pass
 
 
 def connect(
@@ -63,7 +67,7 @@ def connect(
     injection. Raises:
       - DatabaseNotConfiguredError if DATABASE_URL is empty (fail clearly).
       - DatabaseConnectionError if the driver fails to connect (message is
-        redacted — see _redact()).
+        redacted — no credential reaches the traceback).
     """
     if not settings.database_url:
         raise DatabaseNotConfiguredError(
@@ -76,8 +80,9 @@ def connect(
         return connect_fn(settings.database_url)
     except DatabaseNotConfiguredError:
         raise
-    except Exception as exc:  # translate any driver error into our hierarchy
-        raise DatabaseConnectionError(_redact(str(exc))) from exc
+    except Exception as exc:
+        _sanitize(exc)
+        raise DatabaseConnectionError(redact_credentials(str(exc))) from exc
 
 
 def ping(
@@ -100,7 +105,8 @@ def ping(
     except (DatabaseNotConfiguredError, DatabaseConnectionError):
         raise
     except Exception as exc:
-        raise DatabaseConnectionError(_redact(str(exc))) from exc
+        _sanitize(exc)
+        raise DatabaseConnectionError(redact_credentials(str(exc))) from exc
     finally:
         close = getattr(conn, "close", None)
         if callable(close):
