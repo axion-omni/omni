@@ -36,11 +36,10 @@ communicate with models") at Level 2 — pending the operator's Level-3 run.
 `MILESTONE_C_PLAN.md` for the session breakdown):
 
 | Session | Deliverable | Status |
-|---|---|---|
-| 6 | DB access seam + config (D009, Postgres-first) | ⏳ Built, Level 2 — operator L3 pending |
-| 7 | Constitution schema + migration (D010) | ⏳ Built, Level 2 — operator L3 pending |
-| 8 | Constitution repository (create/read/append) | Planned |
-| 9 | CLI wiring + persist-across-redeploy proof | Planned |
+| 6 | DB access seam + config (D009, Postgres-first) | ✅ Done, Level 3 — commit `bdf9100` |
+| 7 | Constitution schema + migration (D010) | ✅ Done, Level 3 — commit `a787441` |
+| 8 | Constitution repository (create/read/append) | ✅ Done, Level 3 — commit `8610b57` |
+| 9 | CLI wiring + persist-across-redeploy proof | NEXT |
 
 Deterministic build specs for Milestones D–L live in `docs/MILESTONE_*_PLAN.md`
 (indexed by `docs/BUILD_INSTRUCTIONS_INDEX.md`).

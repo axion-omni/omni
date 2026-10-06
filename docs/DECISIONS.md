@@ -191,3 +191,44 @@ unit-tested; live apply is an operator Level-3 step (skips without
 `DATABASE_URL`). `gen_random_uuid()` is core PostgreSQL 13+ — no extension.
 **Reversible:** the Session 8 repository hides storage; swapping to Alembic/an
 ORM later is localized to `core/memory/` + `infra/`.
+### D011 — Constitution repository shape; +1 computed in Python; never return None
+**Date:** Session 8 (Milestone C)
+**Decision:** Built `core/memory/constitution.py` — a `ConstitutionRepository`
+over the append-only, versioned `constitutions` table. Five public methods
+(`create` / `get` / `get_version` / `append_change` / `history`). Callers
+never touch the DB directly; the repository is the sole interface above
+`core/memory/db.py`. Three load-bearing rules, all encoded in code:
+(1) **append-only versioning** — `append_change` writes a NEW row at
+`version = latest + 1`; nothing is `UPDATE`d or `DELETE`d by this layer
+(D010 made real). (2) **no silent failure** — a missing project raises
+`ConstitutionNotFoundError`; no method returns `None` to mean "not found."
+(3) **`change_history` and unknown-field names are rejected** — the `change`
+argument is the only path to `change_history`, and typos in `**field_updates`
+raise `ValueError` rather than silently no-op'ing.
+**On `+1` being Python, not SQL:** the `_next_version` query returns the raw
+`MAX(version)` (0 if empty); the repository adds 1. Two reasons. First, the
+fake connection in tests now returns exactly what Postgres returns — the
+off-by-one that surfaced during S8's L2 run was a fake modeled to return
+`MAX+1`, which is a lie about what Postgres does. Second, the arithmetic is
+the seam where a **retry-on-UNIQUE-violation** lands at Milestone F, when
+multiple workers call `append_change` concurrently and the `UNIQUE(project_id,
+version)` constraint becomes the actual serialization point.
+**On `create(name, ...) -> project_id`:** the repository owns project
+creation. The schema splits `projects` and `constitutions`; letting callers
+insert into `projects` directly would fragment ownership. `create` inserts
+both rows in one transaction (one `commit`) and returns the generated uuid.
+**New error type:** `ConstitutionNotFoundError(MemoryError)` — one catch
+type for the whole persistence layer, matching the model layer's discipline.
+**Security addition (small, same session):** `core/memory/db.py` gained
+`_redact()`, applied to every driver error message before it is wrapped in
+`DatabaseConnectionError`. A failed connection string often contains
+`:password@host`; leaking that into a traceback or a log is a real security
+bug, not just an aesthetic one. This protects every future caller, not only
+tests.
+**What was NOT changed:** the schema (0001_init.sql stays), the model, the
+migration runner, `db.py`'s connect/ping contract, any caller outside
+`core/memory/`. `Settings` gained no new field. The CLI still doesn't touch
+the database — that is Session 9.
+**Reversible:** the repository pattern confines a backend swap to
+`core/memory/`; the CLI and any future consumer depend only on the five
+methods and the exception, not on Postgres.

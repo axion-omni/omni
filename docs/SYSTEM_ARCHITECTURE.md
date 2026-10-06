@@ -49,7 +49,14 @@ core/
     │                                   over DATABASE_URL; connector injectable.
     ├── models.py                     Constitution (Pydantic, 13 fields §2). S7.
     └── migrations.py                 Forward-only migration runner (discover/
-                                         pending pure; run() applies). S7.
+    |                                    pending pure; run() applies). S7.
+    │                                   pending pure; run() applies). S7.
+    └── constitution.py               Constitution repository (Session 8).
+                                        create/get/get_version/append_change/
+                                        history over the constitutions table.
+                                        Append-only, versioned, per-project.
+                                        Raises ConstitutionNotFoundError;
+                                        never returns None.
 apps/
 └── cli/
     └── main.py                        Thin terminal interface. Reads argv
@@ -82,12 +89,13 @@ python apps/cli/main.py "<prompt>" [--model <logical-name>]
     → printed to stdout (text) / stderr (usage + selection + errors)
 ```
 
-The **memory layer now has a schema but no persistence wiring yet**
-(`core/memory/`, Sessions 6-7): `db.py` connects to Postgres, `models.py`
-defines the 13-field Constitution, and `migrations.py` + `infra/migrations/
-0001_init.sql` create the `projects`/`constitutions` tables (append-only,
-versioned, per-project scoped). The **repository that reads/writes it is
-Session 8**, and the chat path above still does not touch the database. There
+The memory layer now has schema, migration, and a working repository 
+(core/memory/, Sessions 6–8): db.py connects to Postgres (with credential redaction added in S8),
+ models.py defines the 13-field Constitution, migrations.py + infra/migrations/0001_init.sql 
+ create the projects/constitutions tables (append-only, versioned, per-project scoped), 
+ and constitution.py provides the repository (create / get / get_version / append_change / history)
+  — verified against a live Postgres at Level 3. The CLI does not yet expose it; that is Session 9, 
+  which adds constitution create/show/amend subcommands as thin wrappers over the repository. There
 are no tools and no agents. Model routing is complete: routing (Session 4) maps a (task_type,
 MODEL_POLICY) pair to a logical name and logs the decision; the registry
 resolves that name to a concrete (provider, model_id); retry (Session 5) wraps
@@ -108,7 +116,7 @@ generalized to storage in D009). This is what lets a provider or a storage
 backend be swapped as a localized change, not a rewrite of callers.
 
 ## Last verified against actual code
-Commit `91d740b` + Session 7 (Constitution schema + migration). `pytest -v` →
-59 passed, 2 skipped (live DB ping + live migration, skipped without
-DATABASE_URL) in the assistant sandbox (Level 2). If this file and the actual
-`core/` tree disagree, the code wins — flag it, don't silently trust this doc.
+Last verified against actual code: commit 8610b57 (Session 8, Constitution repository). 
+pytest -v → 76 passed, 0 skipped on the operator's machine, against a live Supabase Postgres 
+(Level 3). If this file and the actual core/ tree disagree, the code wins — flag it, 
+don't silently trust this doc.

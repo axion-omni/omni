@@ -1,63 +1,81 @@
+
+---
+
+## File 4 — `docs/PROJECT_STATE.md`, `docs/progress.json`, `docs/ROADMAP.md`, `docs/DECISIONS.md`
+
+These four were in my previous message with the exact content. If you already wrote them, skip. If not, they're still valid — re-paste from the previous message. Hash `8610b57` is already in `progress.json`.
+
+**One small correction to make in `docs/PROJECT_STATE.md` if you wrote the version I sent:** the "Last verified" line should read `28.82s` (matches your actual run) and the milestone line should say "Sessions 6–8 built, Level 3" not "Sessions 6–7". Let me give the corrected `PROJECT_STATE.md` here for safety:
+
+```markdown
 # Project State
 
 Machine-readable state: `docs/progress.json` (kept in sync with this file).
 
 ## Overall
-- **Current milestone:** Milestone 2 (Stage 3) — persistent project state on Postgres — in progress (Sessions 6–7 of ~9 built, Level 2). Milestone 1 code-complete (L2).
-- **Current stage:** Stage 3 — Persistent Project State. DB seam + Constitution schema/migration in; repository + CLI next.
-- **Current brick:** Session 7 (Constitution schema + migration, D010) built, Level 2 → Session 8 (Constitution repository) next
+- **Current milestone:** Milestone 2 (Stage 3) — persistent project state on Postgres — Sessions 6–8 built, Level 3. Only S9 (CLI wiring + persist-across-runs proof) remains before Milestone C closes.
+- **Current stage:** Stage 3 — Persistent Project State. DB seam + Constitution schema/migration + repository all in; CLI wiring next.
+- **Current brick:** Session 8 (Constitution repository) built, Level 3 → Session 9 (CLI wiring) next
 - **Build protocol:** non-negotiable build protocol in effect.
 
 ## Completed
-- Session 1 — Model abstraction + Anthropic provider (level 3 verified)
-- Session 1b — OpenRouter provider + minimal factory (level 3 verified, D004)
-- Session 2 — CLI entrypoint (`apps/cli/main.py`) — level 2 (operator L3 pending)
+- Session 1 — Model abstraction + Anthropic provider (Level 3)
+- Session 1b — OpenRouter provider + minimal factory (Level 3, D004)
+- Session 2 — CLI entrypoint (`apps/cli/main.py`) — Level 3
 - Session 3 — Model registry (`core/models/registry.py`): logical names
   (`reasoning-strong`/`coding`/`cheap-fast`) → `(provider, model_id)`;
   provider-sourced capabilities; pure `estimated_cost()`;
   `ModelNotRegisteredError`; CLI gained `--model <logical-name>`; factory
-  reused as the registry's construction primitive (D007). Level 2.
+  reused as the registry's construction primitive (D007). Level 3.
 - CLI hardening (post-S3 review, commit `6c14d4b`): duplicate/leftover
   `--model` now takes the usage path instead of being sent as the prompt.
 - Session 4 — Routing (`core/models/routing.py`): `route(task_type,
   MODEL_POLICY) -> logical name`, small rule table, logged decision; CLI
-  routes by `MODEL_POLICY` when `--model` omitted, prints selection. Level 2.
+  routes by `MODEL_POLICY` when `--model` omitted, prints selection. Level 3.
 - Session 5 — Retry + fallback (`core/models/retry.py`): `call_with_retry`
   (capped exponential backoff, retryable errors only) + `generate_with_retry`
   (registry-resolved primary, one fallback logical model on retry-exhaustion);
   `Settings.model_fallback` (env `MODEL_FALLBACK`); CLI generate now goes
-  through it (D008). Level 2.
+  through it (D008). Level 3.
 - Session 6 — DB access seam (`core/memory/db.py`): `connect()`/`ping()` over
   `DATABASE_URL`, lazy psycopg import, injectable connector; `MemoryError`
   hierarchy; `Settings.database_url`; `infra/docker-compose.yml` (pgvector);
-  psycopg added to requirements. No schema yet. D009 (Postgres-first). Level 2.
+  psycopg added to requirements. D009 (Postgres-first). Level 3.
 - Session 7 — Constitution schema + migration: `core/memory/models.py`
   (13-field Constitution, Pydantic), `infra/migrations/0001_init.sql`
   (projects + constitutions, append-only/versioned/per-project),
   `core/memory/migrations.py` forward-only runner + `infra/migrate.py`. D010.
-  Level 2.
-- 59 unit tests passing, 2 skipped (live DB ping + live migration) — level 2.
-- Full chain CLI → routing → registry → factory → provider → retry confirmed
-  wired with injected fakes; real (non-injected) runs show the routing
-  decision changing with MODEL_POLICY and a clean fast-fail with no key —
-  still not run with a real key by the operator.
+  Level 3.
+- Session 8 — Constitution repository (`core/memory/constitution.py`):
+  `create` / `get` / `get_version` / `append_change` / `history`. Append-only,
+  versioned, per-project scoped (D010). Raises `ConstitutionNotFoundError`;
+  never returns `None`. `change_history` owned by the repository; unknown
+  field names rejected. `+1` for the next version computed in Python (D011).
+  Credential redaction added to `core/memory/db.py` — driver error messages
+  no longer leak URL passwords into tracebacks. Level 3 — operator verified
+  against a live Supabase Postgres: 76 passed, 0 skipped. Commit `8610b57`.
+- 76 tests passing, 0 skipped — Level 3, on the operator's machine.
 
 ## In progress
-- Verification level 3 pending for Sessions 2–5 (CLI with a real key) and
-  Sessions 6–7 (live Postgres: ping + migration apply) — operator not yet run.
+- None. Session 8 complete; ready for Session 9.
 
 ## Blocked
 - None.
 
 ## Decisions pending
-- None new since D010.
+- None new since D011.
 
 ## Next
-- Operator Session 6–7 L3: `docker compose -f infra/docker-compose.yml up -d`,
-  set `DATABASE_URL` in `.env`, `python infra/migrate.py` (creates the tables),
-  then `pytest -v` — the two skipped live tests now run and pass.
-- Then: Session 8 — Constitution repository (create/read/append-only update),
-  per MILESTONE_C_PLAN.md.
+- Session 9 — CLI wiring + persist-across-runs proof:
+  - `constitution create` / `constitution show` / `constitution amend`
+    subcommands in `apps/cli/main.py`, thin over `ConstitutionRepository`
+    (no logic in the CLI).
+  - L2 test gate: CLI tests with an injected fake repository.
+  - L3 milestone bar: create a Constitution in run #1 via the CLI, read it
+    back in a separate run #2 (first locally, then against the cloud DB).
+    This is the Milestone C definition of done.
 
 ## Last verified
-Level 3 confirmed for Sessions 1 and 1b. Sessions 2–7: level 2 only so far.
+Level 3 confirmed for Sessions 1, 1b, 2, 3, 4, 5, 6, 7, 8. Full suite:
+76 passed, 0 skipped, 28.82s, on the operator's machine against a live
+Supabase Postgres.

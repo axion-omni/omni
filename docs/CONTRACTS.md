@@ -284,6 +284,20 @@ dependency added). Default model: `meta-llama/llama-3.3-70b-instruct:free`
 — overridable via `OPENROUTER_MODEL`, since free-tier model slugs on
 OpenRouter rotate over time.
 
+
+## `ConstitutionRepository` (core/memory/constitution.py) — Session 8
+
+```python
+class ConstitutionRepository:
+    def __init__(self, settings: Settings, *, connector=None) -> None: ...
+
+    def create(self, name: str, constitution: Constitution | None = None) -> str: ...
+    def get(self, project_id: str) -> Constitution: ...
+    def get_version(self, project_id: str, version: int) -> Constitution: ...
+    def append_change(self, project_id: str, change: str, **field_updates) -> int: ...
+    def history(self, project_id: str) -> list[tuple[int, datetime]]: ...
+    ```
+
 ## Not yet defined (will be added here when built)
 
 - Constitution repository create/read/append (`core.memory.constitution`) — Session 8

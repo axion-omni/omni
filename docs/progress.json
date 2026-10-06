@@ -1,10 +1,10 @@
 {
-  "overall_progress_pct": 20,
-  "current_milestone": "M2 (Stage 3) - persistent project state on Postgres (in progress); M1 code-complete L2",
-  "current_stage": "Stage 3 - Persistent Project State (DB seam + schema in; repository next)",
-  "current_brick": "Session 8 (next)",
+  "overall_progress_pct": 25,
+  "current_milestone": "M2 (Stage 3) - persistent project state on Postgres (S6-S8 done L3; S9 next); M1 code-complete L3",
+  "current_stage": "Stage 3 - Persistent Project State (DB seam + schema + repository all in; CLI wiring next)",
+  "current_brick": "Session 9 (next)",
   "build_protocol_adopted": true,
-  "verification_level_current_brick": 2,
+  "verification_level_current_brick": 3,
   "completed_bricks": [
     {
       "id": "S1",
@@ -47,7 +47,7 @@
       ],
       "tests_passing": 3,
       "commit": "5431770",
-      "verification_level": 2
+      "verification_level": 3
     },
     {
       "id": "S3",
@@ -63,7 +63,7 @@
       "tests_passing": 14,
       "total_tests_after": 31,
       "commit": "4467ceb",
-      "verification_level": 2
+      "verification_level": 3
     },
     {
       "id": "S3-fix",
@@ -75,7 +75,7 @@
       "tests_passing": 2,
       "total_tests_after": 33,
       "commit": "6c14d4b",
-      "verification_level": 2
+      "verification_level": 3
     },
     {
       "id": "S4",
@@ -88,7 +88,7 @@
       "tests_passing": 6,
       "total_tests_after": 39,
       "commit": "8adf4f9",
-      "verification_level": 2
+      "verification_level": 3
     },
     {
       "id": "S5",
@@ -104,7 +104,7 @@
       "tests_passing": 7,
       "total_tests_after": 46,
       "commit": "aed67e2",
-      "verification_level": 2
+      "verification_level": 3
     },
     {
       "id": "S6",
@@ -121,9 +121,8 @@
       ],
       "tests_passing": 7,
       "total_tests_after": 53,
-      "tests_skipped": 1,
       "commit": "bdf9100",
-      "verification_level": 2
+      "verification_level": 3
     },
     {
       "id": "S7",
@@ -137,25 +136,39 @@
       ],
       "tests_passing": 6,
       "total_tests_after": 59,
-      "tests_skipped": 2,
       "commit": "a787441",
-      "verification_level": 2
+      "verification_level": 3
+    },
+    {
+      "id": "S8",
+      "title": "Constitution repository (create/read/append-only, Milestone C)",
+      "files": [
+        "core/memory/constitution.py",
+        "core/memory/exceptions.py (extended: ConstitutionNotFoundError)",
+        "core/memory/db.py (credential redaction added)",
+        "tests/test_constitution.py"
+      ],
+      "tests_passing": 15,
+      "total_tests_after": 76,
+      "commit": "8610b57",
+      "verification_level": 3
     }
   ],
-  "next_brick": "S8",
+  "next_brick": "S9",
   "blocked_bricks": [],
   "open_questions": [],
   "open_risks": [
     "OpenRouter free-tier model slugs rotate; default may need updating via OPENROUTER_MODEL env var over time",
     "Routing (S4) selects logical names but every name resolves to one concrete model per provider (D007); physical per-tier model differentiation needs a second registered model",
     "Retry (S5) is complete but a live fallback (MODEL_FALLBACK) only changes the outcome once it resolves to a different provider/model than the primary (D008)",
-    "Milestone C uses forward-only SQL migrations against real Postgres - the deploy-safety surface; no destructive/down migrations"
+    "Milestone C uses forward-only SQL migrations against real Postgres - the deploy-safety surface; no destructive/down migrations",
+    "ConstitutionRepository's _next_version reads MAX + inserts in two statements (no row lock). Safe at single-operator scale; a concurrent-writer retry-on-UNIQUE-violation lands at Milestone F when workers exist."
   ],
   "decisions_required": [],
   "failed_experiments": [],
-  "milestone_1_status": "code-complete at Level 2 (Sessions 1-5); pending operator Level-3",
-  "milestone_c_plan": "docs/MILESTONE_C_PLAN.md (Sessions 6-9); S6-S7 built L2",
+  "milestone_1_status": "code-complete at Level 3 (Sessions 1-5); operator verified",
+  "milestone_c_plan": "docs/MILESTONE_C_PLAN.md (Sessions 6-9); S6-S8 built L3",
   "milestone_d_to_l_plans": "docs/MILESTONE_D_PLAN.md ... MILESTONE_L_PLAN.md, indexed by docs/BUILD_INSTRUCTIONS_INDEX.md (deterministic build specs written ahead)",
   "destination_doc": "PERSONAL_AI_OS_MASTER_ARCHITECTURE.md (see D006)",
-  "handoff_note": "Milestone 1 code-complete L2 (S1-S5). Milestone C in progress: S6 DB seam + S7 Constitution schema/migration built L2 (59 pass, 2 skipped live DB tests). Next brick S8 = Constitution repository (create/read/append-only). Operator L3 for S6-S7: docker compose up, set DATABASE_URL, `python infra/migrate.py`, `pytest -v` (2 live tests then run). Deterministic build specs for the WHOLE remaining path (Milestones D-L) are pre-written in docs/MILESTONE_*_PLAN.md, indexed by docs/BUILD_INSTRUCTIONS_INDEX.md - any agent can execute them without re-deriving design. First phone-usable interface arrives at Milestone D."
+  "handoff_note": "Milestones A and B code-complete and operator-verified (L3). Milestone C in progress: S6 DB seam + S7 Constitution schema/migration + S8 Constitution repository all built and L3 (76 passed, 0 skipped, on the operator's machine against live Supabase Postgres; S8 commit 8610b57). Next brick S9 = CLI wiring (constitution create/show/amend) + persist-across-runs proof, which is the Milestone C definition of done. Deterministic build specs for the WHOLE remaining path (Milestones D-L) are pre-written in docs/MILESTONE_*_PLAN.md, indexed by docs/BUILD_INSTRUCTIONS_INDEX.md - any agent can execute them without re-deriving design. First phone-usable interface arrives at Milestone D."
 }
