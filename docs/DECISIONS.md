@@ -271,3 +271,20 @@ deferred until something needs it.
 **Reversible:** the entire subcommand family is additive. Removing it means
 reverting `run()` to its single-handler form and deleting one test file;
 no other module changes.
+
+### D013 — Database credential rotated (post-S8 leak in operator traceback)
+**Date:** post-Session 9
+**Context:** During S8's operator L3 run against Supabase, a connection
+failure printed the full DATABASE_URL (including the password) into the
+terminal traceback. The string was captured in local scrollback and in the
+session transcript.
+**Action:** Password reset at the source (Supabase dashboard → Settings →
+Database → Reset). New password updated in local `.env`. Confirmed with a
+full `pytest -v` (88 passed) and a CLI `constitution show` against the
+existing project_id.
+**Structural fix (already in place):** `core/memory/db.py` gained
+`_redact()` in S8 — every driver error message is passed through a
+regex that replaces `:password@` with `:***@` before it becomes a
+`DatabaseConnectionError`. Future credential leaks of this shape cannot
+reach a traceback or a log.
+**Reversible:** N/A — rotating a leaked credential is always the right call.
