@@ -1,0 +1,83 @@
+# infra/render.yaml — Render Blueprint for the Personal AI OS Cloud API.
+#
+# This file documents the intended production configuration. It is NOT the
+# primary deploy path for the first deployment — the service is created
+# manually in the Render dashboard (see docs/DEPLOYMENT.md) because a manual
+# first deploy is more forgiving to iterate on than a Blueprint apply. Once
+# the service exists and works, this file is the source of truth for what it
+# should look like; a future environment can be created from it.
+#
+# Render Blueprint docs: https://render.com/docs/blueprint-spec
+#
+# SECRETS. None of the secret values appear here — Render reads them from
+# its own secret manager (or from a Secret File / Environment Group) at
+# deploy time. This file only names the variables the service requires, so
+# a human deploying the service knows what to set. The same names are the
+# ones apps/api/settings.py and core/config.py read from the environment.
+#
+# DATABASE. The default is to reuse the existing Supabase Postgres created
+# in Milestone C — its connection string is already in the operator's local
+# .env and is copied into Render's env vars as DATABASE_URL. A
+# Render-managed Postgres is possible (see the commented block at the
+# bottom) but is not needed for Milestone D: the D4 webhook does not read or
+# write the database. Binding a Render Postgres is a Milestone E decision,
+# made when memory + RAG actually need one.
+
+services:
+  - type: web
+    name: omni-api
+    runtime: python
+    plan: free
+    region: oregon            # change to the region nearest you
+    branch: main
+    autoDeploy: true          # redeploy on push to main
+    healthCheckPath: /health
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn apps.api.app:app --host 0.0.0.0 --port $PORT
+
+    # Every variable the service reads at runtime. Names only — values live
+    # in Render's secret manager. `sync: false` in Render's Blueprint syntax
+    # means "not sourced from this file; set it in the dashboard", which is
+    # what we want for every secret here.
+    envVars:
+      # --- Telegram (D2, D4) ---
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ALLOWED_USER_IDS
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false           # filled after first deploy: https://omni-api.onrender.com
+
+      # --- Engine model config (A/B) ---
+      - key: ACTIVE_PROVIDER
+        sync: false           # "anthropic" or "openrouter"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        sync: false
+      - key: MODEL_POLICY
+        sync: false           # free | cheap | balanced | quality | maximum
+      - key: MODEL_FALLBACK
+        sync: false           # optional
+
+      # --- Persistence (C) ---
+      - key: DATABASE_URL
+        sync: false           # reuse the Supabase URL from local .env
+
+# -----------------------------------------------------------------------------
+# Optional: a Render-managed Postgres instead of Supabase.
+#
+# Deferred to Milestone E. Uncomment only if the deployment needs its own
+# database. If you do, the web service's DATABASE_URL should be set from the
+# database's `connectionString` (Render wires the two automatically when the
+# service and database are in the same Blueprint and `fromDatabase` is used).
+#
+# databases:
+#   - name: omni-db
+#     plan: free
+#     region: oregon
+#     postgresMajorVersion: "16"
