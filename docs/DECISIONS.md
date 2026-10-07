@@ -385,3 +385,37 @@ real implementations — same injection pattern as `apps/cli/main.py`.
 (return 200 immediately, enqueue, worker replies) is a change to this
 function plus the addition of the worker in Milestone F. No contract change
 above or below.
+### D017 — Milestone D closed; deployment target and cold-start acceptance
+**Date:** Session 14 (Milestone D, D5)
+**Context:** The milestone gate — a message sent from a phone reaches the engine
+and a reply returns — was verified end-to-end from a real phone against the
+deployed instance.
+**Decision:** Production deployment for the Personal AI OS is Render, free
+tier, Web Service backed by the existing Supabase Postgres (no new database
+created for D5). Webhook registered at
+`https://<service>.onrender.com/telegram/webhook` with a `secret_token` equal
+to Render's `TELEGRAM_WEBHOOK_SECRET`.
+**Render free-tier behavior accepted:** the service sleeps after ~15 minutes
+idle; the first request after a sleep takes ~30s. This is a real cost in
+latency, but it does not affect correctness, and it is appropriate for a
+single-operator MVP. A later milestone (E or F) may move to a paid tier, or
+add a keep-alive ping, if the latency becomes a problem in use.
+**Reused infrastructure (deliberate):** the Supabase Postgres from Milestone C
+is bound to the service as `DATABASE_URL` but is not read or written by the
+D4 webhook. The binding exists so Milestone E's memory layer has a working
+connection from the deployed instance on day one, without a second deployment
+step.
+**Webhook-registration gotcha observed in practice:** the handler is silent
+on every failure branch (D015/D016), which means a missing webhook
+registration looks identical from the phone to any other failure — nothing
+comes back. The diagnostic is `getWebhookInfo` (from the Telegram API) plus
+the Render log pane. `docs/DEPLOYMENT.md` documents this: if the phone test
+fails, check `getWebhookInfo` first, then the Render logs, before changing
+anything.
+**What was NOT changed:** `core/`, `apps/api/telegram.py`, `apps/api/app.py`,
+`apps/api/settings.py`. The only new files are `infra/render.yaml` (a
+declarative reference for the service configuration) and `docs/DEPLOYMENT.md`
+(the operator runbook).
+**Reversible:** yes — deleting the webhook (`deleteWebhook`) disables the
+interface immediately without redeploying; deleting the Render service
+removes the deployment. The repo state (Milestones A–C) is unaffected.

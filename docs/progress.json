@@ -1,11 +1,11 @@
 {
-  "overall_progress_pct": 25,
-  "current_milestone": "M2 (Stage 3) - persistent project state on Postgres (Milestone C CLOSED L3); Milestone D in progress (D1 + D2 + D3 + D4 done, D5 next — the milestone gate)",
-  "current_stage": "Stage 3 closed; Milestone D - Cloud API + Telegram bot",
-  "current_brick": "D5 (next) = S14 - Render deploy + Telegram webhook registration (the milestone gate)",
-  "next_brick": "S14",
+  "overall_progress_pct": 35,
+  "current_milestone": "M2 (Stage 3) - persistent project state on Postgres (Milestone C CLOSED L3); Milestone D CLOSED L3 — first phone-usable interface",
+  "current_stage": "Stage 3 closed; Milestone D closed; Milestone E (memory + RAG) next",
+  "current_brick": "Milestone E planning — memory + RAG (pgvector)",
+  "next_brick": "S15",
   "build_protocol_adopted": true,
-  "verification_level_current_brick": 2,
+  "verification_level_current_brick": 3,
   "completed_bricks": [
     {
       "id": "S1",
@@ -192,7 +192,7 @@
       "tests_passing": 17,
       "total_tests_after": 114,
       "commit": "fd18572",
-      "verification_level": 2
+      "verification_level": 3
     },
     {
       "id": "S12",
@@ -204,7 +204,7 @@
       "tests_passing": 8,
       "total_tests_after": 122,
       "commit": "e8feb93",
-      "verification_level": 2
+      "verification_level": 3
     },
     {
       "id": "S13",
@@ -215,8 +215,21 @@
       ],
       "tests_passing": 8,
       "total_tests_after": 130,
-      "commit": "S13_HASH_PLACEHOLDER",
-      "verification_level": 2
+      "commit": "70399ec",
+      "verification_level": 3
+    },
+    {
+      "id": "S14",
+      "title": "Render deploy + Telegram webhook (Milestone D DONE)",
+      "files": [
+        "infra/render.yaml",
+        "docs/DEPLOYMENT.md"
+      ],
+      "tests_passing": 0,
+      "total_tests_after": 130,
+      "commit": "S14_HASH_PLACEHOLDER",
+      "verification_level": 3,
+      "notes": "Phone test passed: real phone -> Telegram -> Render -> engine -> Telegram -> real phone. Webhook registered at https://omni-kzdn.onrender.com/telegram/webhook. Deployment live on Render free tier; cold start ~30s after 15 min idle."
     }
   ],
   "blocked_bricks": [],
@@ -228,13 +241,16 @@
     "Milestone C uses forward-only SQL migrations against real Postgres - the deploy-safety surface; no destructive/down migrations",
     "ConstitutionRepository's _next_version reads MAX + inserts in two statements (no row lock). Safe at single-operator scale; a concurrent-writer retry-on-UNIQUE-violation lands at Milestone F when workers exist.",
     "Milestone D is synchronous (D016): the Telegram webhook handler calls the model inline. Telegram retries on timeout (~seconds), so a slow model call risks duplicate replies. Async/background execution is Milestone F. Acceptable for D's definition of done; noted so it isn't mistaken for a bug.",
-    "Webhook handler replies do NOT cover model-error or send-error cases (D4 stays silent and logs). If the phone test at D5 appears to 'hang' with no reply, check the app logs before assuming the bot is dead."
+    "Webhook handler replies do NOT cover model-error or send-error cases (D4 stays silent and logs). If the phone test at D5 appears to 'hang' with no reply, check the app logs before assuming the bot is dead.",
+    "Render free tier sleeps after 15 minutes idle; the first request after wake takes ~30s. Acceptable for single-operator use; a Milestone E/F concern if async replies make latency matter more.",
+    "Webhook URL is not idempotent across Telegram retries: if a model call exceeds Telegram's ~seconds timeout, the same update_id can produce a duplicate reply. Milestone F's job queue is the fix; noted so a future duplicate-reply report is diagnosed as known."
   ],
   "decisions_required": [],
   "failed_experiments": [],
   "milestone_1_status": "code-complete at Level 3 (Sessions 1-5); operator verified",
   "milestone_c_plan": "docs/MILESTONE_C_PLAN.md (Sessions 6-9); S6-S8 built L3",
+  "milestone_d_status": "CLOSED at Level 3 (Sessions 10-14). First phone-usable interface: a real phone message reaches the deployed engine and a reply returns. Deployment: Render free tier at https://omni-kzdn.onrender.com; webhook registered via setWebhook with the secret token.",
   "milestone_d_to_l_plans": "docs/MILESTONE_D_PLAN.md ... MILESTONE_L_PLAN.md, indexed by docs/BUILD_INSTRUCTIONS_INDEX.md (deterministic build specs written ahead)",
   "destination_doc": "PERSONAL_AI_OS_MASTER_ARCHITECTURE.md (see D006)",
-  "handoff_note": "Milestones A, B, and C all code-complete and operator-verified (L3). Milestone C closed by S9 (commit 6865514; 95 passed). Milestone D in progress: D1 = S10 built the FastAPI cloud API skeleton (97 passed, L3). D2 = S11 built Telegram update parsing + allowlist auth (114 passed, L2 by design). D3 = S12 added send_message to apps/api/telegram.py (TelegramSendError, injectable http, _redact applies core redaction plus a Telegram-token-in-URL-path pass; 122 passed, L2 by design). D4 = S13 wired POST /telegram/webhook in apps/api/app.py: secret header check, parse, allowlist, engine chain (route -> registry -> generate_with_retry), send_message; registry_builder and http injectable so tests are offline; all failure branches return 200 {ok: true} silently (D015/D016; 130 passed, L2 by design — L3 deferred to D5). Next brick D5 = S14: the milestone gate. Deploy to Render (Web Service, uvicorn apps.api.app:app --host 0.0.0.0 --port $PORT; managed Postgres bound; secrets in Render's manager), run python infra/migrate.py against the cloud DB, register the webhook with Telegram (setWebhook to <public_base_url>/telegram/webhook with the secret token), then verify from a real phone. THIS is Milestone D's definition of done (destination §15)."
+  "handoff_note": "Milestones A, B, C, and D all code-complete and operator-verified (L3). Milestone D closed by S14 (commit TBD): the Cloud API deployed to Render, the Telegram webhook registered, and a real-phone message produced a model reply end-to-end. This is the first phone-usable interface of the system. Next: Milestone E — memory + RAG (pgvector), building on the Supabase Postgres from Milestone C and the deployed Cloud API from Milestone D. Deterministic build specs for the remaining path (Milestones E-L) are in docs/MILESTONE_*_PLAN.md, indexed by docs/BUILD_INSTRUCTIONS_INDEX.md."
 }

@@ -132,3 +132,17 @@ Supabase Postgres.
 - L3 deferred to D5; D4 is L2 by design.
 - **D5 is the milestone gate:** deploy to Render, register the webhook,
   message the bot from a real phone.
+**D5 — Render deploy + phone end-to-end — DONE (S14, L3). MILESTONE D CLOSED.**
+- Deployment: Render free tier Web Service, live at
+  `https://omni-kzdn.onrender.com`.
+- Webhook registered via `setWebhook` with the secret token; confirmed by
+  `getWebhookInfo`.
+- **The milestone definition of done is satisfied:** a message sent from a
+  real phone reaches the deployed engine and a reply returns.
+- `infra/render.yaml` — declarative service config (reference; the initial
+  service was created manually in the Render dashboard).
+- `docs/DEPLOYMENT.md` — the operator runbook (create service, set secrets,
+  migrate, register webhook, phone test, rollback, rotation).
+- No new code; no new tests. The milestone gate is the phone test.
+- **Next milestone: E — memory + RAG (pgvector).** Builds on the Supabase
+  Postgres from C and the deployed API from D. See `MILESTONE_E_PLAN.md`.
