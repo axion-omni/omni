@@ -87,3 +87,16 @@ Machine-readable state: `docs/progress.json` (kept in sync with this file).
 Level 3 confirmed for Sessions 1, 1b, 2, 3, 4, 5, 6, 7, 8. Full suite:
 76 passed, 0 skipped, 28.82s, on the operator's machine against a live
 Supabase Postgres.
+## Milestone D — Cloud API + Telegram bot (in progress)
+
+**D1 — FastAPI cloud API skeleton — DONE (S10, L3).**
+- `apps/api/__init__.py`, `apps/api/settings.py` (`ApiSettings` wrapper over
+  `core.config.Settings`, per D014), `apps/api/app.py` (`create_app` +
+  `GET /health` + module-level uvicorn app).
+- `tests/test_api_health.py` — 2 tests, offline, injected settings.
+- `requirements.txt` gained `fastapi` and `uvicorn[standard]`.
+- L3 verified on the operator's machine: `uvicorn apps.api.app:app` served
+  `/health` → `{"status":"ok"}`; `/docs` loaded.
+- Full suite: 97 passed, 0 skipped (was 95 before D1).
+
+**Next:** D2 (S11) — Telegram update parsing + allowlist auth.

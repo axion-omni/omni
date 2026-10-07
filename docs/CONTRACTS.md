@@ -337,6 +337,82 @@ text
 
 
 
+## Cloud API surface (apps/api/) — Session 10 (Milestone D, D1)
+
+```python
+# apps/api/settings.py
+@dataclass(frozen=True)
+class ApiSettings:
+    engine: Settings          # core.config.Settings — the engine's settings
+
+def load_api_settings() -> ApiSettings: ...
+
+# apps/api/app.py
+def create_app(settings: ApiSettings) -> FastAPI: ...
+app = create_app(load_api_settings())   # uvicorn entry point
+Endpoints (D1):
+
+GET /health → 200 {"status": "ok"}. The deploy health check; Render
+polls it, and the operator uses it to confirm a running instance.
+
+Agreements:
+
+The API is a thin interface (D003, D014). No business logic lives in
+apps/api/ beyond wiring HTTP to core/. Any future handler parses the
+request, calls one engine entry point, formats the response — nothing more.
+
+create_app takes settings explicitly (factory pattern) so tests construct
+the app against fakes with no env, no network, no keys — same discipline as
+apps/cli/main.py.
+
+Settings are stored on app.state.settings so handlers reach them via
+request.app.state.settings without a module global.
+
+apps/api/app.py mirrors apps/cli/main.py's sys.path.insert(...) at
+module top so apps.api can import core.* when loaded by path.
+
+The module-level app is the uvicorn entry point
+(uvicorn apps.api.app:app). It is constructed at import time from real
+env settings; tests should prefer create_app(...) with injected settings.
+
+Endpoints added in later D sessions (contract reserved now):
+
+POST /telegram/webhook (D4) — Telegram pushes updates here. Requires the
+X-Telegram-Bot-Api-Secret-Token header (D2/D4). Unauthorized updates are
+rejected with 200 OK and no side effect (destination §11).
+
+text
+
+**Replace the stale "Not yet defined" section** with:
+
+```markdown
+## Not yet defined (will be added here when built)
+
+- `POST /telegram/webhook` handler (D4)
+- `parse_update` / `is_authorized` / `send_message` (D2/D3)
+- Tool interface (`core.tools.Tool`) — Milestone G
+- Agent contract (task/output shape every agent returns) — Milestone H
+- Task graph node schema — Milestone I
+Edit 4 — docs/MILESTONE_D_PLAN.md
+Two mechanical fixes. The decision numbers in the "Likely decisions to log" section collide with existing entries D011–D013, and the "Settings via core/config.py" line contradicts D014.
+
+Replace the "Likely decisions to log" block with:
+
+markdown
+## Decisions logged (see DECISIONS.md)
+- **D014 — Interface settings live in `apps/api/settings.py`, wrapping `core.config.Settings`; `core/` is not edited.** (Logged at D1.)
+- **D015 — Telegram auth = user-id allowlist + webhook secret header.** (To be logged at D2.)
+- **D016 — Milestone D is synchronous** (request handler calls the model and replies inline). Background workers for long tasks are Milestone F; note the known limitation (Telegram webhooks time out ~seconds). (To be logged at D4.)
+Fix the config line in "New dependencies / config / secrets":
+
+Replace:
+
+Settings additions (via core/config.py, env-sourced): telegram_bot_token, telegram_allowed_user_ids (parse comma-separated → tuple[int,...]), telegram_webhook_secret, public_base_url.
+
+With:
+
+ApiSettings additions (apps/api/settings.py, env-sourced; see D014): telegram_bot_token, telegram_allowed_user_ids (parse comma-separated → tuple[int,...]), telegram_webhook_secret, public_base_url. core/config.py is not edited.
+
 ## Not yet defined (will be added here when built)
 
 - Constitution repository create/read/append (`core.memory.constitution`) — Session 8

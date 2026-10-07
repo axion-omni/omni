@@ -288,3 +288,35 @@ regex that replaces `:password@` with `:***@` before it becomes a
 `DatabaseConnectionError`. Future credential leaks of this shape cannot
 reach a traceback or a log.
 **Reversible:** N/A — rotating a leaked credential is always the right call.
+### D014 — Interface settings live in `apps/api/settings.py`, not `core.config.Settings`
+**Date:** Session 10 (Milestone D, D1)
+**Decision:** Milestone D's interface-layer configuration (Telegram bot token,
+allowed user ids, webhook secret, public base URL) does **not** go into
+`core.config.Settings`. It lives in a new `apps/api/settings.py` as an
+`ApiSettings` dataclass that **wraps** `core.config.Settings` (field `engine:
+Settings`). `load_api_settings()` is the env-reading seam for the interface
+layer, delegating engine settings to `core.config.load_settings()`.
+**Why:** three reasons, in order of force.
+(1) The Milestone D handoff forbids modifying `core/`, and
+`docs/MILESTONE_D_PLAN.md`'s line "Settings additions via core/config.py"
+contradicts it. A wrapper honors the handoff and keeps the engine chat's
+ownership of `core/` intact — if the engine reshapes `Settings` later, the
+API absorbs the change instead of fighting it.
+(2) `core.config.Settings` is a frozen dataclass with a hand-written
+`__repr__` that masks `database_url` (D013). Adding two secret fields
+(`telegram_bot_token`, `telegram_webhook_secret`) without editing that repr
+would leak them into pytest tracebacks — exactly the failure class D013 was
+logged for. Editing the repr means editing `core/`, back to reason (1).
+`ApiSettings` owns its own masking `__repr__` (added in D2 when the secret
+fields land) and never touches the engine's.
+(3) D003: the engine is headless and knows nothing about Telegram. Telegram
+fields in `core/config.py` would break that boundary at the type level, not
+just stylistically.
+**Shape (D1):** `ApiSettings` currently carries only `engine: Settings`.
+D2 extends it with the four Telegram fields and the masking repr. Because
+`create_app(settings: ApiSettings) -> FastAPI` is fixed from D1 onward, this
+extension is additive — no caller churn across D1–D5.
+**What was NOT changed:** `core/config.py` (zero edits), `apps/cli/`,
+`core/` at all. `requirements.txt` gained `fastapi` and `uvicorn[standard]`.
+**Reversible:** Yes — if the engine later decides to own Telegram settings,
+the wrapper can delegate or be deleted without touching `core/`.

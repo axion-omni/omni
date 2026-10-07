@@ -1,8 +1,9 @@
 {
   "overall_progress_pct": 25,
-  "current_milestone": "M2 (Stage 3) - persistent project state on Postgres (S6-S8 done L3; S9 next); M1 code-complete L3",
-  "current_stage": "Stage 3 - Persistent Project State (DB seam + schema + repository all in; CLI wiring next)",
-  "current_brick": "Session 9 (next)",
+  "current_milestone": "M2 (Stage 3) - persistent project state on Postgres (Milestone C CLOSED L3); Milestone D in progress (D1 done, D2 next)",
+  "current_stage": "Stage 3 closed; Milestone D - Cloud API + Telegram bot",
+  "current_brick": "D2 (next) = S11 - Telegram update parsing + allowlist auth",
+  "next_brick": "S11",
   "build_protocol_adopted": true,
   "verification_level_current_brick": 3,
   "completed_bricks": [
@@ -152,9 +153,35 @@
       "total_tests_after": 76,
       "commit": "8610b57",
       "verification_level": 3
+    },
+    {
+      "id": "S9",
+      "title": "CLI constitution subcommands (Milestone C closed)",
+      "files": [
+        "apps/cli/main.py (extended: constitution create/show/amend)",
+        "tests/test_cli_constitution.py"
+      ],
+      "tests_passing": 19,
+      "total_tests_after": 95,
+      "commit": "6865514",
+      "verification_level": 3
+    },
+    {
+      "id": "S10",
+      "title": "FastAPI cloud API skeleton (Milestone D, D1)",
+      "files": [
+        "apps/api/__init__.py",
+        "apps/api/settings.py (ApiSettings wrapper over core.config.Settings)",
+        "apps/api/app.py (create_app + /health + module-level app)",
+        "tests/test_api_health.py",
+        "requirements.txt (fastapi, uvicorn[standard])"
+      ],
+      "tests_passing": 2,
+      "total_tests_after": 97,
+      "commit": "997fee8",
+      "verification_level": 3
     }
   ],
-  "next_brick": "S9",
   "blocked_bricks": [],
   "open_questions": [],
   "open_risks": [
@@ -162,7 +189,8 @@
     "Routing (S4) selects logical names but every name resolves to one concrete model per provider (D007); physical per-tier model differentiation needs a second registered model",
     "Retry (S5) is complete but a live fallback (MODEL_FALLBACK) only changes the outcome once it resolves to a different provider/model than the primary (D008)",
     "Milestone C uses forward-only SQL migrations against real Postgres - the deploy-safety surface; no destructive/down migrations",
-    "ConstitutionRepository's _next_version reads MAX + inserts in two statements (no row lock). Safe at single-operator scale; a concurrent-writer retry-on-UNIQUE-violation lands at Milestone F when workers exist."
+    "ConstitutionRepository's _next_version reads MAX + inserts in two statements (no row lock). Safe at single-operator scale; a concurrent-writer retry-on-UNIQUE-violation lands at Milestone F when workers exist.",
+    "Milestone D is synchronous (D016): the Telegram webhook handler calls the model inline. Telegram retries on timeout (~seconds), so a slow model call risks duplicate replies. Async/background execution is Milestone F. Acceptable for D's definition of done; noted so it isn't mistaken for a bug."
   ],
   "decisions_required": [],
   "failed_experiments": [],
@@ -170,5 +198,5 @@
   "milestone_c_plan": "docs/MILESTONE_C_PLAN.md (Sessions 6-9); S6-S8 built L3",
   "milestone_d_to_l_plans": "docs/MILESTONE_D_PLAN.md ... MILESTONE_L_PLAN.md, indexed by docs/BUILD_INSTRUCTIONS_INDEX.md (deterministic build specs written ahead)",
   "destination_doc": "PERSONAL_AI_OS_MASTER_ARCHITECTURE.md (see D006)",
-  "handoff_note": "Milestones A and B code-complete and operator-verified (L3). Milestone C in progress: S6 DB seam + S7 Constitution schema/migration + S8 Constitution repository all built and L3 (76 passed, 0 skipped, on the operator's machine against live Supabase Postgres; S8 commit 8610b57). Next brick S9 = CLI wiring (constitution create/show/amend) + persist-across-runs proof, which is the Milestone C definition of done. Deterministic build specs for the WHOLE remaining path (Milestones D-L) are pre-written in docs/MILESTONE_*_PLAN.md, indexed by docs/BUILD_INSTRUCTIONS_INDEX.md - any agent can execute them without re-deriving design. First phone-usable interface arrives at Milestone D."
+  "handoff_note": "Milestones A, B, and C all code-complete and operator-verified (L3). Milestone C closed by S9 (commit 6865514, CLI constitution subcommands; 95 passed). Milestone D started: D1 = S10 built the FastAPI cloud API skeleton (apps/api/app.py, create_app + /health; apps/api/settings.py ApiSettings wrapper over core.config.Settings per D014; 97 passed, 0 skipped, verified L3 on the operator's machine — /health returned {status: ok} and /docs loaded). Next brick D2 = S11: Telegram update parsing + allowlist auth (apps/api/telegram.py, config additions to ApiSettings, tests/test_telegram_auth.py). Deterministic build specs for the whole remaining path (Milestones D-L) are in docs/MILESTONE_*_PLAN.md, indexed by docs/BUILD_INSTRUCTIONS_INDEX.md. First phone-usable interface arrives at the close of Milestone D (D5)."
 }
