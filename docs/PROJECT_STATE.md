@@ -109,3 +109,11 @@ Supabase Postgres.
   `tuple[int, ...]`), `TELEGRAM_WEBHOOK_SECRET`, `PUBLIC_BASE_URL`.
 - `tests/test_telegram_auth.py` — fixture payloads only, no network.
 - L3 deferred to D5 (real phone against deployed instance); D2 is L2 by design.
+
+**D3 — Thin Telegram send_message client — DONE (S12, L2).**
+- `apps/api/telegram.py` extended — `send_message(chat_id, text, settings, *,
+  http=requests)`, `TelegramSendError`, and `_redact` (core redaction plus a
+  Telegram-token-in-URL-path pass). Imports moved to top of file.
+- `tests/test_telegram_send.py` — 8 tests, injected fake `http`, offline.
+- No new env vars, no new routes. The webhook that calls this arrives in D4.
+- L3 deferred to D5; D3 is L2 by design.

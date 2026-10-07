@@ -475,6 +475,45 @@ bash
 python -c "import json; d=json.load(open('docs/progress.json')); print('valid', len(d['completed_bricks']), d['completed_bricks'][-1]['id'], d['next_brick'])"
 Expect: valid 13 S11 S12
 
+## Telegram outbound (apps/api/telegram.py) — Session 12 (D3)
+
+```python
+class TelegramSendError(Exception): ...
+
+def send_message(
+    chat_id: int,
+    text: str,
+    settings: ApiSettings,
+    *,
+    http=requests,
+) -> None: ...
+Agreements:
+
+URL is https://api.telegram.org/bot<token>/sendMessage; body is
+{"chat_id": <int>, "text": <str>} sent as JSON.
+
+http is injectable (default requests); tests pass a fake and never
+touch the network. Same discipline as core.memory.db.connect(connector=)
+and core.models.retry.generate_with_retry(sleep=).
+
+Returns None on success. Raises TelegramSendError on any failure: empty
+token (no HTTP attempted), requests.RequestException (transport), or
+non-2xx status.
+
+No retry inside send_message — the caller decides policy, matching how
+core.models.retry wraps provider.generate rather than baking retries
+into the provider.
+
+All error text passes through _redact, which applies
+core.config.redact_credentials (the D013 discipline for user:pass@
+URLs) and then a Telegram-specific pass
+(bot\d+:[A-Za-z0-9_-]+ → bot***) that masks a bot token appearing in a
+URL path. Neither a user:pass@ nor a bot<token> form can reach a
+traceback or a log.
+
+timeout=10 bounds the call so a hung connection cannot block the
+synchronous webhook path indefinitely (D016).
+
 ## Not yet defined (will be added here when built)
 
 - Constitution repository create/read/append (`core.memory.constitution`) — Session 8
