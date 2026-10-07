@@ -413,6 +413,68 @@ With:
 
 ApiSettings additions (apps/api/settings.py, env-sourced; see D014): telegram_bot_token, telegram_allowed_user_ids (parse comma-separated → tuple[int,...]), telegram_webhook_secret, public_base_url. core/config.py is not edited.
 
+## Telegram parsing + auth (apps/api/telegram.py) — Session 11 (D2)
+
+```python
+@dataclass(frozen=True)
+class IncomingMessage:
+    update_id: int
+    user_id: int
+    chat_id: int
+    text: str
+
+def parse_update(payload: Any) -> IncomingMessage | None: ...
+def is_authorized(user_id: int, settings: ApiSettings) -> bool: ...
+Agreements:
+
+parse_update consumes a Telegram update dict and returns an
+IncomingMessage for a plain text message from a user. It returns None
+for every other shape: non-dict payloads, missing/mistyped keys, non-message
+updates (edited_message, channel_post, callback_query, …), empty/whitespace
+text, non-string text. It never raises on malformed input.
+
+is_authorized(user_id, settings) returns user_id in settings.telegram_allowed_user_ids. An empty allowlist denies everyone.
+
+Both are pure, side-effect-free, and take their settings explicitly — no
+globals, no env reads. Tests construct real ApiSettings with fake values.
+
+The webhook-secret header check is not here; it belongs to the HTTP
+layer (D4's handler in apps/api/app.py), because it inspects request
+headers, not the update body.
+
+text
+
+**`docs/progress.json`** — this is the one I got wrong at D1. To prevent that: add the S11 entry and fix the pointer fields, but **do not commit until you paste the validator output**. The edit is:
+
+Add to `completed_bricks` (after S10):
+
+```json
+    {
+      "id": "S11",
+      "title": "Telegram update parsing + allowlist auth (Milestone D, D2)",
+      "files": [
+        "apps/api/telegram.py (IncomingMessage, parse_update, is_authorized)",
+        "apps/api/settings.py (extended: 4 Telegram fields + masking repr)",
+        "tests/test_telegram_auth.py"
+      ],
+      "tests_passing": "<N>",
+      "total_tests_after": "<97+N>",
+      "commit": "<fill after commit>",
+      "verification_level": 2
+    }
+Note verification_level: 2 — D2 has no L3. It becomes L3 when the phone test at D5 proves the whole path, at which point I'll bump it retroactively in the S11 entry (or add a note).
+
+Fix the top-level pointers:
+
+json
+  "current_brick": "D3 (next) = S12 - thin Telegram send_message client",
+  "next_brick": "S12",
+Update handoff_note to end with the S11 line. Then run the validator before committing:
+
+bash
+python -c "import json; d=json.load(open('docs/progress.json')); print('valid', len(d['completed_bricks']), d['completed_bricks'][-1]['id'], d['next_brick'])"
+Expect: valid 13 S11 S12
+
 ## Not yet defined (will be added here when built)
 
 - Constitution repository create/read/append (`core.memory.constitution`) — Session 8

@@ -320,3 +320,28 @@ extension is additive — no caller churn across D1–D5.
 `core/` at all. `requirements.txt` gained `fastapi` and `uvicorn[standard]`.
 **Reversible:** Yes — if the engine later decides to own Telegram settings,
 the wrapper can delegate or be deleted without touching `core/`.
+### D015 — Telegram auth = user-id allowlist + webhook secret header
+**Date:** Session 11 (Milestone D, D2)
+**Decision:** A webhook request is authorized only if **both** conditions
+hold: (1) the `X-Telegram-Bot-Api-Secret-Token` header equals
+`TELEGRAM_WEBHOOK_SECRET`, and (2) the update's `from.id` is in
+`TELEGRAM_ALLOWED_USER_IDS`. Both checks live in the interface layer
+(`apps/api/telegram.py` and the D4 webhook handler). Anything else is
+rejected with `200 OK` and no side effect — the destination §11
+"reject silently, don't leak which users exist" rule.
+**Why two checks, not one:** the secret header proves the request came from
+Telegram's infrastructure (defense against unsolicited POSTs to a public
+URL). The allowlist proves the *user* is permitted to talk to the bot
+(defense against a stranger who knows the bot's username — bot usernames are
+public, so allowlist is the only user-level gate). Neither alone is
+sufficient; the two are complementary.
+**Empty allowlist means deny-all.** The default is closed. A misconfigured
+`.env` cannot accidentally admit everyone; it can only accidentally lock out
+the operator, which is the safe failure mode.
+**What was NOT changed:** `core/`, the `create_app` signature, the D1
+`/health` route. `parse_update` returns `None` for any input it cannot turn
+into an `IncomingMessage`; it never raises on malformed input, because the
+correct response to an unrecognized update is to ignore it, not to 500.
+**Reversible:** Yes — both checks are pure functions with an injected
+settings object; changing the auth model is a change to `is_authorized` and
+the header comparison only, no schema or protocol change.

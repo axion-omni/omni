@@ -100,3 +100,12 @@ Supabase Postgres.
 - Full suite: 97 passed, 0 skipped (was 95 before D1).
 
 **Next:** D2 (S11) — Telegram update parsing + allowlist auth.
+**D2 — Telegram update parsing + allowlist auth — DONE (S11, L2).**
+- `apps/api/telegram.py` — `IncomingMessage`, `parse_update`,
+  `is_authorized`. Pure, offline-testable, never raises on malformed input.
+- `apps/api/settings.py` extended — four Telegram fields on `ApiSettings`
+  plus a masking `__repr__` (D013/D014 discipline). `load_api_settings()`
+  reads `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USER_IDS` (parsed to
+  `tuple[int, ...]`), `TELEGRAM_WEBHOOK_SECRET`, `PUBLIC_BASE_URL`.
+- `tests/test_telegram_auth.py` — fixture payloads only, no network.
+- L3 deferred to D5 (real phone against deployed instance); D2 is L2 by design.
