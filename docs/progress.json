@@ -1,9 +1,9 @@
 {
   "overall_progress_pct": 25,
-  "current_milestone": "M2 (Stage 3) - persistent project state on Postgres (Milestone C CLOSED L3); Milestone D in progress (D1 + D2 + D3 done, D4 next)",
+  "current_milestone": "M2 (Stage 3) - persistent project state on Postgres (Milestone C CLOSED L3); Milestone D in progress (D1 + D2 + D3 + D4 done, D5 next — the milestone gate)",
   "current_stage": "Stage 3 closed; Milestone D - Cloud API + Telegram bot",
-  "current_brick": "D4 (next) = S13 - wire the webhook to the model pipeline",
-  "next_brick": "S13",
+  "current_brick": "D5 (next) = S14 - Render deploy + Telegram webhook registration (the milestone gate)",
+  "next_brick": "S14",
   "build_protocol_adopted": true,
   "verification_level_current_brick": 2,
   "completed_bricks": [
@@ -203,7 +203,19 @@
       ],
       "tests_passing": 8,
       "total_tests_after": 122,
-      "commit": "S12_HASH_PLACEHOLDER",
+      "commit": "e8feb93",
+      "verification_level": 2
+    },
+    {
+      "id": "S13",
+      "title": "Wire the webhook to the model pipeline (Milestone D, D4)",
+      "files": [
+        "apps/api/app.py (extended: POST /telegram/webhook; secret header check; injectable registry_builder + http)",
+        "tests/test_api_webhook.py"
+      ],
+      "tests_passing": 8,
+      "total_tests_after": 130,
+      "commit": "S13_HASH_PLACEHOLDER",
       "verification_level": 2
     }
   ],
@@ -215,7 +227,8 @@
     "Retry (S5) is complete but a live fallback (MODEL_FALLBACK) only changes the outcome once it resolves to a different provider/model than the primary (D008)",
     "Milestone C uses forward-only SQL migrations against real Postgres - the deploy-safety surface; no destructive/down migrations",
     "ConstitutionRepository's _next_version reads MAX + inserts in two statements (no row lock). Safe at single-operator scale; a concurrent-writer retry-on-UNIQUE-violation lands at Milestone F when workers exist.",
-    "Milestone D is synchronous (D016): the Telegram webhook handler calls the model inline. Telegram retries on timeout (~seconds), so a slow model call risks duplicate replies. Async/background execution is Milestone F. Acceptable for D's definition of done; noted so it isn't mistaken for a bug."
+    "Milestone D is synchronous (D016): the Telegram webhook handler calls the model inline. Telegram retries on timeout (~seconds), so a slow model call risks duplicate replies. Async/background execution is Milestone F. Acceptable for D's definition of done; noted so it isn't mistaken for a bug.",
+    "Webhook handler replies do NOT cover model-error or send-error cases (D4 stays silent and logs). If the phone test at D5 appears to 'hang' with no reply, check the app logs before assuming the bot is dead."
   ],
   "decisions_required": [],
   "failed_experiments": [],
@@ -223,5 +236,5 @@
   "milestone_c_plan": "docs/MILESTONE_C_PLAN.md (Sessions 6-9); S6-S8 built L3",
   "milestone_d_to_l_plans": "docs/MILESTONE_D_PLAN.md ... MILESTONE_L_PLAN.md, indexed by docs/BUILD_INSTRUCTIONS_INDEX.md (deterministic build specs written ahead)",
   "destination_doc": "PERSONAL_AI_OS_MASTER_ARCHITECTURE.md (see D006)",
-  "handoff_note": "Milestones A, B, and C all code-complete and operator-verified (L3). Milestone C closed by S9 (commit 6865514; 95 passed). Milestone D in progress: D1 = S10 built the FastAPI cloud API skeleton (97 passed, L3). D2 = S11 built Telegram update parsing + allowlist auth (apps/api/telegram.py: IncomingMessage, parse_update, is_authorized; apps/api/settings.py extended with the four Telegram fields on ApiSettings plus a masking repr per D014/D015; 114 passed, L2 by design). D3 = S12 added send_message to apps/api/telegram.py (TelegramSendError, injectable http, _redact applies core redaction plus a Telegram-token-in-URL-path pass; 122 passed, L2 by design — L3 deferred to D5). Next brick D4 = S13: wire the Telegram webhook to the model pipeline (POST /telegram/webhook in apps/api/app.py; parse -> authorize -> route -> registry -> generate_with_retry -> send_message; header secret check; registry + http injectable so tests are offline). Deterministic build specs for the whole remaining path (Milestones D-L) are in docs/MILESTONE_*_PLAN.md, indexed by docs/BUILD_INSTRUCTIONS_INDEX.md. First phone-usable interface arrives at the close of Milestone D (D5)."
+  "handoff_note": "Milestones A, B, and C all code-complete and operator-verified (L3). Milestone C closed by S9 (commit 6865514; 95 passed). Milestone D in progress: D1 = S10 built the FastAPI cloud API skeleton (97 passed, L3). D2 = S11 built Telegram update parsing + allowlist auth (114 passed, L2 by design). D3 = S12 added send_message to apps/api/telegram.py (TelegramSendError, injectable http, _redact applies core redaction plus a Telegram-token-in-URL-path pass; 122 passed, L2 by design). D4 = S13 wired POST /telegram/webhook in apps/api/app.py: secret header check, parse, allowlist, engine chain (route -> registry -> generate_with_retry), send_message; registry_builder and http injectable so tests are offline; all failure branches return 200 {ok: true} silently (D015/D016; 130 passed, L2 by design — L3 deferred to D5). Next brick D5 = S14: the milestone gate. Deploy to Render (Web Service, uvicorn apps.api.app:app --host 0.0.0.0 --port $PORT; managed Postgres bound; secrets in Render's manager), run python infra/migrate.py against the cloud DB, register the webhook with Telegram (setWebhook to <public_base_url>/telegram/webhook with the secret token), then verify from a real phone. THIS is Milestone D's definition of done (destination §15)."
 }

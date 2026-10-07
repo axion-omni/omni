@@ -117,3 +117,18 @@ Supabase Postgres.
 - `tests/test_telegram_send.py` — 8 tests, injected fake `http`, offline.
 - No new env vars, no new routes. The webhook that calls this arrives in D4.
 - L3 deferred to D5; D3 is L2 by design.
+
+**D4 — Wire the webhook to the model pipeline — DONE (S13, L2).**
+- `apps/api/app.py` extended — `POST /telegram/webhook` with the secret
+  header check, parse, allowlist, engine chain, and outbound. `create_app`
+  gains `registry_builder` and `http` keyword-only injection seams.
+- Every failure branch returns `200 {"ok": true}` silently and logs (D015,
+  D016).
+- `tests/test_api_webhook.py` — 8 tests, injected fakes for both the
+  registry and Telegram http, offline. Covers happy path, missing/wrong
+  secret, unauthorized user, unparseable update, model error, send error,
+  and response-body uniformity across outcomes.
+- No new env vars, no `core/` changes.
+- L3 deferred to D5; D4 is L2 by design.
+- **D5 is the milestone gate:** deploy to Render, register the webhook,
+  message the bot from a real phone.

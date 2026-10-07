@@ -345,3 +345,43 @@ correct response to an unrecognized update is to ignore it, not to 500.
 **Reversible:** Yes — both checks are pure functions with an injected
 settings object; changing the auth model is a change to `is_authorized` and
 the header comparison only, no schema or protocol change.
+### D016 — Milestone D's webhook handler is synchronous
+**Date:** Session 13 (Milestone D, D4)
+**Decision:** `POST /telegram/webhook` calls the engine synchronously — it
+runs routing -> registry -> `generate_with_retry` inline, then `send_message`
+inline, and returns 200. There is no background worker, no queue, and no
+deferred reply in Milestone D.
+**Why:** the Milestone D definition of done is "a message sent from a phone
+reaches the engine and a reply returns to the phone." A synchronous handler
+is the smallest thing that satisfies that. Adding a queue now would require
+a worker process, a jobs table, retry semantics for enqueued work, and a
+second path through which replies could fail — all of which are Milestone F's
+territory (job queue + workers). Building them now would be throwaway work
+in a milestone that only needs to prove the round trip.
+**Known limitation, stated not hidden:** Telegram webhooks time out in
+roughly seconds. A model call that exceeds that window causes Telegram to
+retry the same `update_id`, and because the handler is not idempotent across
+a retried update, the user may receive the reply twice. At single-operator
+scale against a fast provider, this is rare. Recorded as an open risk in
+`progress.json` so a D5 symptom (duplicate reply) is diagnosed as known, not
+as a bug.
+**Second-order decision — silent failure.** Every failure branch in the
+handler (bad secret header, unparseable update, unauthorized user, model
+error, send error) returns `200 {"ok": true}` with no side effect. The
+alternative — returning non-2xx so Telegram retries — was rejected because
+retrying on most of those conditions can't succeed and would amplify the
+problem (rejected auth doesn't get less rejected on retry; a model error
+after `generate_with_retry` already exhausted retries won't succeed on a
+second webhook retry). No branch replies to the user on error: model-error
+and send-error stay silent and log. A user-facing error reply is a Milestone
+E+ concern (once there's a conversation context in which an error message is
+meaningful), not a Milestone D one.
+**What was NOT changed:** `core/`, `apps/api/telegram.py` (D3's primitives
+used as-is), `apps/api/settings.py`, the D1 `/health` route, the D2
+`parse_update` / `is_authorized` contracts. `create_app` gained two optional
+keyword-only parameters (`registry_builder`, `http`), both defaulting to the
+real implementations — same injection pattern as `apps/cli/main.py`.
+**Reversible:** Yes — the handler is one function. Moving to an async model
+(return 200 immediately, enqueue, worker replies) is a change to this
+function plus the addition of the worker in Milestone F. No contract change
+above or below.

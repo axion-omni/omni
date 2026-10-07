@@ -521,3 +521,54 @@ synchronous webhook path indefinitely (D016).
 - Agent contract (task/output shape every agent returns) — Session ~11+
 - Task graph node schema — Session ~13+
 - Project Constitution schema — Session ~6+ (Stage 3)
+
+
+## Telegram webhook (apps/api/app.py) — Session 13 (D4)
+
+```python
+def create_app(
+    settings: ApiSettings,
+    *,
+    registry_builder: Callable[[Settings], Any] = build_default_registry,
+    http: Any = requests,
+) -> FastAPI: ...
+Endpoints:
+
+POST /telegram/webhook — receives Telegram updates. Requires the header
+X-Telegram-Bot-Api-Secret-Token to equal
+settings.telegram_webhook_secret. Body is the raw Telegram update JSON.
+
+Agreements:
+
+Every response is 200 {"ok": true}. The response never varies by
+branch: not on bad secret, not on unparseable update, not on unauthorized
+user, not on model error, not on send error, not on success. The uniform
+body means the response leaks nothing about which branch was taken
+(destination §11). Status 200 means "received, do not retry" to Telegram.
+
+Check order: secret header → parse → allowlist → engine → outbound.
+Each stage is strictly cheaper than the next, and a failure at any stage
+short-circuits the rest — no wasted work, no side effects after a failure.
+
+Secret header comparison is exact-match (not constant-time — the
+secret is high-entropy and the header is not attacker-controlled in a way
+that benefits from timing analysis). An empty configured secret rejects
+everything; the default is closed.
+
+The engine chain mirrors apps/cli/main.py exactly: route( DEFAULT_TASK_TYPE, settings.engine.model_policy) → registry_builder( settings.engine) → generate_with_retry(registry, text, primary= logical_model, fallback=settings.engine.model_fallback or None).
+
+Injection: registry_builder and http are keyword-only on
+create_app, defaulting to the real build_default_registry and
+requests. Tests pass fakes; production uses the defaults. Both are
+stored on app.state and reached via request.app.state in the handler —
+no module globals.
+
+Logging: update_id is the correlation key. user_id is logged only
+after is_authorized returns True; a rejected user is logged as a
+rejection, without the id, so the log doesn't leak "someone tried."
+
+Failure of send_message is logged and swallowed — the webhook still
+returns 200 so Telegram doesn't retry and cause a duplicate model call.
+Same for ModelError after retries. Neither branch replies to the user
+(D016).
+
